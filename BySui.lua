@@ -7,10 +7,10 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.3",
+    Title = "Sui Hub v2.1",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
-    Size = UDim2.fromOffset(500, 350),
+    Size = UDim2.fromOffset(450, 350),
     Acrylic = true,
     Theme = "Dark",
     SaveConfig = false
@@ -21,7 +21,7 @@ local Window = Fluent:CreateWindow({
 -- ================================
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
-    Boss = Window:AddTab({ Title = "Boss", Icon = "swords" }),
+    Boss = Window:AddTab({ Title = "Boss", Icon = "skull" }),
     Discord = Window:AddTab({ Title = "Discord", Icon = "server" })
 }
 
@@ -76,108 +76,123 @@ Tabs.Discord:AddButton({
 -- ================================
 -- ABA BOSS
 -- ================================
-local player = game.Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-
 local selectedBosses = {}
-local farmActive = false
-local farmingThread = nil
+local player = game.Players.LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
 
-local BossDropdown = Tabs.Boss:AddDropdown("BossSelector", {
-    Title = "Selecione os Bosses",
-    Description = "Escolha múltiplos bosses para farmar (prioridade: ordem da lista)",
-    Values = {"Kaigaku", "Boss 2", "Boss 3", "Boss 4", "Boss 5"},
+local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
+    Title = "Bosses disponíveis",
+    Description = "Selecione os bosses que deseja farmar",
+    Values = {"Kaigaku", "Boss2", "Boss3", "Boss4", "Boss5"},
     Multi = true,
     Default = {"Kaigaku"}
 })
 
-BossDropdown:OnChanged(function(values)
+MultiDropdown:OnChanged(function(values)
     selectedBosses = values
 end)
 
-local function getBossByName(name)
+local farming = false
+
+-- Função para encontrar o boss
+local function findBoss(name)
+    name = string.lower(name)
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name:lower() == name:lower() and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 then
-            return obj
+        if obj:IsA("Model") and string.lower(obj.Name) == name then
+            local hrp = obj:FindFirstChild("HumanoidRootPart")
+            local hum = obj:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.Health > 0 then
+                return obj
+            end
         end
     end
+    return nil
 end
 
-local function moveToBoss(boss)
+-- Função de ataque M1
+local function attackBoss()
+    local args = {"Katana", "Server"}
+    replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
+end
+
+-- Função de movimentação até o boss
+local function moveToTarget(targetPos)
     local char = player.Character
     if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+
     local hrp = char.HumanoidRootPart
-    local targetPos = boss:FindFirstChild("HumanoidRootPart") and boss.HumanoidRootPart.Position
-    if not targetPos then return end
-
-    local dist = (hrp.Position - targetPos).Magnitude
-
-    if dist > 100 then
-        hrp.CFrame = boss.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-    else
-        -- voo gradual
-        local direction = (targetPos - hrp.Position).Unit
-        hrp.CFrame = hrp.CFrame + direction * 3
-    end
+    local direction = (targetPos - hrp.Position).Unit
+    local newPos = hrp.Position + direction * 5 -- move gradualmente
+    hrp.CFrame = CFrame.new(newPos, targetPos)
 end
 
-local function attackBoss()
-    VirtualUser:Button1Down(Vector2.new(0, 0))
-    task.wait(0.1)
-    VirtualUser:Button1Up(Vector2.new(0, 0))
-end
-
-local function startFarming()
-    farmingThread = task.spawn(function()
-        while farmActive do
-            task.wait(0.1)
-
-            local bossFound = nil
-            for _, name in ipairs(selectedBosses) do
-                local boss = getBossByName(name)
-                if boss then
-                    bossFound = boss
-                    break
-                end
-            end
-
-            if bossFound then
-                moveToBoss(bossFound)
-                attackBoss()
-            end
-        end
-    end)
-end
-
-local function stopFarming()
-    farmActive = false
-    if farmingThread then
-        task.cancel(farmingThread)
-        farmingThread = nil
-    end
-end
-
-Tabs.Boss:AddToggle("AutoFarmBoss", {
+-- Farm principal
+Tabs.Boss:AddToggle("FarmToggle", {
     Title = "Auto Farm Boss",
     Description = "Ataca automaticamente os bosses selecionados",
     Default = false,
     Callback = function(state)
-        farmActive = state
-        if state then
-            startFarming()
+        farming = state
+
+        if farming then
             Fluent:Notify({
-                Title = "Auto Farm Ativado",
-                Content = "O farm de bosses foi iniciado.",
+                Title = "Sui Hub",
+                Content = "Farm iniciado.",
                 Duration = 3
             })
         else
-            stopFarming()
             Fluent:Notify({
-                Title = "Auto Farm Desativado",
-                Content = "O farm de bosses foi interrompido.",
+                Title = "Sui Hub",
+                Content = "Farm finalizado.",
                 Duration = 3
             })
         end
+
+        task.spawn(function()
+            while farming do
+                local boss = nil
+
+                -- verifica o primeiro boss vivo
+                for _, name in ipairs(selectedBosses) do
+                    boss = findBoss(name)
+                    if boss then break end
+                end
+
+                if not boss then
+                    Fluent:Notify({
+                        Title = "Sui Hub",
+                        Content = "Nenhum boss vivo encontrado.",
+                        Duration = 3
+                    })
+                    farming = false
+                    break
+                end
+
+                local char = player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") and boss:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    local bossHRP = boss.HumanoidRootPart
+                    local distance = (hrp.Position - bossHRP.Position).Magnitude
+
+                    if distance > 100 then
+                        -- Teleporta se estiver longe
+                        hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
+                    elseif distance > 5 then
+                        -- Move gradualmente até ele
+                        moveToTarget(bossHRP.Position + Vector3.new(0, 2, 0))
+                    else
+                        -- Ataca quando perto
+                        attackBoss()
+                    end
+                end
+
+                -- Se o boss morrer, tenta o próximo
+                if boss and boss:FindFirstChildOfClass("Humanoid") and boss.Humanoid.Health <= 0 then
+                    boss = nil
+                end
+
+                task.wait(0.1)
+            end
+        end)
     end
 })
