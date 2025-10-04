@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.5",
+    Title = "Sui Hub v1.51",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -54,7 +54,7 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE)
+-- BOTÃO FLUTUANTE (PC + MOBILE) - SEM FUNÇÃO DE SUMIR
 -- ================================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -72,25 +72,25 @@ screenGui.Parent = playerGui
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px do topo
+toggleButton.Position = UDim2.new(0, 10, 0, 70)
 toggleButton.AnchorPoint = Vector2.new(0,0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.ZIndex = 9999
 toggleButton.AutoButtonColor = true
-toggleButton.Draggable = true -- permite arrastar
+toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
 -- ================================
--- FUNÇÃO DE TOGGLE (mesma lógica da tecla K)
+-- FUNÇÃO DE TOGGLE DO HUB
 -- ================================
 local function toggleHub()
     Window.Visible = not Window.Visible
 end
 
 -- ================================
--- SIMULA A TECLA K (como seu código C)
+-- SIMULA A TECLA K (somente abre/fecha o hub)
 -- ================================
 local function simulateKeyPress(key)
     local usedExploit = false
