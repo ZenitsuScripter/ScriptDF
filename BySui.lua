@@ -21,7 +21,7 @@ local Window = Fluent:CreateWindow({
 -- ADICIONA ABAS
 -- ================================
 local Tabs = {
-    Raid = Window:AddTab({ Title = "Raid", Icon = "eye" }),
+    Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" })
 }
 
