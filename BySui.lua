@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.80",
+    Title = "Sui Hub v1.95",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -72,7 +72,7 @@ screenGui.Parent = playerGui
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleHubButton"
 toggleButton.Size = UDim2.fromOffset(60, 60)
-toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px do topo
+toggleButton.Position = UDim2.new(0, 10, 0, 70) -- posição inicial
 toggleButton.AnchorPoint = Vector2.new(0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
@@ -84,23 +84,20 @@ toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
 -- ================================
--- FUNÇÃO DE ABRIR/FECHAR HUB
+-- FUNÇÃO DE MINIMIZAR (clicando no botão)
 -- ================================
-local function toggleHub()
-    Window.Visible = not Window.Visible
+local function minimizeHub()
+    Window.Visible = false -- só esconde o Hub
 end
 
--- ================================
--- CONECTA BOTÃO FLUTUANTE
--- ================================
-toggleButton.MouseButton1Click:Connect(toggleHub)
+toggleButton.MouseButton1Click:Connect(minimizeHub)
 
 -- ================================
--- CONECTA TECLA K
+-- TECLA K (alternar Hub)
 -- ================================
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == MINIMIZE_KEY then
-        toggleHub()
+        Window.Visible = not Window.Visible -- alterna Hub
     end
 end)
