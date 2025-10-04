@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.52",
+    Title = "Sui Hub v1.55",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -53,32 +53,30 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE)
+-- BOTÃO FLUTUANTE (PC + MOBILE) - MESMA LOGICA DO SEU CÓDIGO
 -- ================================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
 local MINIMIZE_KEY = Enum.KeyCode.K
 
--- Cria ScreenGui no topo
+-- Cria ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SuiHubGUI"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 9999
-
--- Evita sumir controles mobile
-screenGui.IgnoreGuiInset = not UserInputService.TouchEnabled
+screenGui.IgnoreGuiInset = not UserInputService.TouchEnabled -- evita sumir controles mobile
 screenGui.Parent = playerGui
 
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
 toggleButton.Position = UDim2.new(0, 10, 0, 70)
-toggleButton.AnchorPoint = Vector2.new(0,0)
+toggleButton.AnchorPoint = Vector2.new(0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.ZIndex = UserInputService.TouchEnabled and 1 or 9999 -- ZIndex seguro no mobile
+toggleButton.ZIndex = UserInputService.TouchEnabled and 1 or 9999
 toggleButton.AutoButtonColor = true
 toggleButton.Draggable = true
 toggleButton.Parent = screenGui
@@ -91,20 +89,29 @@ local function toggleHub()
 end
 
 -- ================================
--- SIMULA TECLA (USANDO SOMENTE SEU CÓDIGO) - SEM FALLBACK
+-- MESMA LOGICA DO SEU CÓDIGO DA TECLA C
 -- ================================
-local function simulateKeyPress()
-    local keey = MINIMIZE_KEY
-    if type(keypress) == "function" and type(keyrelease) == "function" then
-        keypress(keey)
-        task.wait(0.05)
-        keyrelease(keey)
+local function LinkKey(Button, KeyCode)
+    if not Button then
+        warn("Botão não encontrado ou não definido.")
+        return
     end
-    -- se keypress/keyrelease não existirem, NÃO FAZ NADA
+    if not (Button:IsA("TextButton") or Button:IsA("ImageButton")) then
+        warn("Classe esperada: 'TextButton' ou 'ImageButton'. Obtido: '"..Button.ClassName.."'")
+        return
+    end
+
+    Button.MouseButton1Click:Connect(function()
+        if type(keypress) == "function" and type(keyrelease) == "function" then
+            keypress(KeyCode)
+            task.wait(0.05)
+            keyrelease(KeyCode)
+        end
+    end)
 end
 
--- conecta o clique do botão flutuante
-toggleButton.MouseButton1Click:Connect(simulateKeyPress)
+-- vincula o botão flutuante à tecla K
+LinkKey(toggleButton, MINIMIZE_KEY)
 
 -- conecta a tecla K no teclado
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
