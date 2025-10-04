@@ -7,10 +7,10 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1",
+    Title = "Sui Hub v1.1",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
-    Size = UDim2.fromOffset(400, 400),
+    Size = UDim2.fromOffset(500, 350),
     Acrylic = true,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.K, -- tecla K
@@ -72,7 +72,7 @@ screenGui.Parent = playerGui
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px
+toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px do topo
 toggleButton.AnchorPoint = Vector2.new(0,0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
@@ -83,14 +83,14 @@ toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
 -- ================================
--- FUNÇÕES DE TOGGLE E SIMULAÇÃO DE TECLA
+-- FUNÇÕES DE ABRIR/FECHAR HUB
 -- ================================
--- Minimize: só esconde o Hub
+-- Minimiza o Hub, botão continua visível
 local function minimizeHub()
     Window.Visible = false
 end
 
--- Close: esconde Hub e remove botão flutuante
+-- Fecha completamente o Hub, remove botão flutuante
 local function closeHub()
     Window.Visible = false
     if toggleButton and toggleButton.Parent then
@@ -98,43 +98,22 @@ local function closeHub()
     end
 end
 
--- ToggleHub: usa a lógica do seu código C para simular tecla K
+-- Alterna Hub (usado no botão flutuante e tecla K)
 local function toggleHub()
-    local usedExploit = false
-
-    if type(keypress) == "function" then
-        local ok, _ = pcall(function()
-            keypress(MINIMIZE_KEY)
-            task.wait(0.05)
-            if type(keyrelease) == "function" then
-                keyrelease(MINIMIZE_KEY)
-            end
-        end)
-        if ok then usedExploit = true end
-    end
-
-    if not usedExploit and type(press_key) == "function" then
-        local ok, _ = pcall(function()
-            press_key(MINIMIZE_KEY)
-            task.wait(0.05)
-            if type(release_key) == "function" then release_key(MINIMIZE_KEY) end
-        end)
-        usedExploit = ok
-    end
-
-    -- fallback: apenas minimiza se não houver exploit
-    if not usedExploit then
+    if Window.Visible then
         minimizeHub()
+    else
+        Window.Visible = true
     end
 end
 
 -- ================================
--- CONECTA O BOTÃO FLUTUANTE
+-- BOTÃO FLUTUANTE
 -- ================================
 toggleButton.MouseButton1Click:Connect(toggleHub)
 
 -- ================================
--- CONECTA TECLA K
+-- TECLA K
 -- ================================
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
@@ -142,3 +121,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         toggleHub()
     end
 end)
+
+-- ================================
+-- OPCIONAL: botão “X” dentro do Hub para fechar completamente
+-- ================================
+local CloseButton = Window:AddButton({
+    Title = "Fechar Hub",
+    Description = "Fecha o Hub e remove o botão flutuante",
+    Callback = closeHub
+})
