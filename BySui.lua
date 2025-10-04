@@ -7,10 +7,10 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.1",
+    Title = "Sui Hub v2.55",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
-    Size = UDim2.fromOffset(450, 350),
+    Size = UDim2.fromOffset(500, 350),
     Acrylic = true,
     Theme = "Dark",
     SaveConfig = false
