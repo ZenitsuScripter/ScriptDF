@@ -79,7 +79,7 @@ toggleButton.Text = "K"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.ZIndex = 9999
 toggleButton.AutoButtonColor = true
-toggleButton.Draggable = true -- permite arrastar
+toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
 -- ================================
@@ -87,6 +87,15 @@ toggleButton.Parent = screenGui
 -- ================================
 local function toggleHub()
     Window.Visible = not Window.Visible
+
+    if not Window.Visible then
+        -- remove o botão depois de 0.1s para não travar input do celular
+        task.delay(0.1, function()
+            if toggleButton and toggleButton.Parent then
+                toggleButton:Destroy()
+            end
+        end)
+    end
 end
 
 -- ================================
