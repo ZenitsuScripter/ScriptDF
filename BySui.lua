@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.55",
+    Title = "Sui Hub v1.6",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -53,7 +53,7 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE) - MESMA LOGICA DO SEU CÓDIGO
+-- BOTÃO FLUTUANTE (PC + MOBILE) - LOGICA DO BOTÃO DA TECLA C
 -- ================================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -64,19 +64,26 @@ local MINIMIZE_KEY = Enum.KeyCode.K
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SuiHubGUI"
 screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 9999
-screenGui.IgnoreGuiInset = not UserInputService.TouchEnabled -- evita sumir controles mobile
+screenGui.DisplayOrder = 999 -- ZIndex seguro
+screenGui.IgnoreGuiInset = false -- nunca esconde controles mobile
 screenGui.Parent = playerGui
 
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 70)
+
+-- Posição segura para mobile: canto superior esquerdo
+if UserInputService.TouchEnabled then
+    toggleButton.Position = UDim2.new(0, 10, 0, 50)
+else
+    toggleButton.Position = UDim2.new(0, 10, 0, 70)
+end
+
 toggleButton.AnchorPoint = Vector2.new(0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.ZIndex = UserInputService.TouchEnabled and 1 or 9999
+toggleButton.ZIndex = 1 -- baixo para não cobrir controles
 toggleButton.AutoButtonColor = true
 toggleButton.Draggable = true
 toggleButton.Parent = screenGui
@@ -89,7 +96,7 @@ local function toggleHub()
 end
 
 -- ================================
--- MESMA LOGICA DO SEU CÓDIGO DA TECLA C
+-- MESMA LOGICA DO BOTÃO DA TECLA C
 -- ================================
 local function LinkKey(Button, KeyCode)
     if not Button then
