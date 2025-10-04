@@ -59,20 +59,25 @@ Tabs.Raid:AddButton({
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Cria ScreenGui
+-- Cria ScreenGui no topo
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SuiHubGUI"
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 9999
 screenGui.Parent = playerGui
 
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.AnchorPoint = Vector2.new(0,0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "Menu"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.ZIndex = 10
+toggleButton.ZIndex = 9999
+toggleButton.AutoButtonColor = true
+toggleButton.Draggable = true -- permite arrastar
 toggleButton.Parent = screenGui
 
 -- Alterna visibilidade da janela Fluent
