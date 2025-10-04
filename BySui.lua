@@ -10,7 +10,7 @@ local Window = Fluent:CreateWindow({
     Title = "Sui Hub",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
-    Size = UDim2.fromOffset(500, 400),
+    Size = UDim2.fromOffset(580, 400),
     Acrylic = true,
     Theme = "Dark",
     MinimizeKey = Enum.KeyCode.K, -- tecla K
@@ -61,7 +61,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
 local MINIMIZE_KEY = Enum.KeyCode.K
 
--- Cria ScreenGui no topo
+-- Cria ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SuiHubGUI"
 screenGui.ResetOnSpawn = false
@@ -72,7 +72,7 @@ screenGui.Parent = playerGui
 -- Cria botão flutuante
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.fromOffset(50, 50)
-toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px do topo
+toggleButton.Position = UDim2.new(0, 10, 0, 70) -- abaixado para 70px
 toggleButton.AnchorPoint = Vector2.new(0,0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
@@ -83,33 +83,31 @@ toggleButton.Draggable = true
 toggleButton.Parent = screenGui
 
 -- ================================
--- FUNÇÃO DE TOGGLE (mesma lógica da tecla K)
+-- FUNÇÕES DE TOGGLE E SIMULAÇÃO DE TECLA
 -- ================================
-local function toggleHub()
-    Window.Visible = not Window.Visible
+-- Minimize: só esconde o Hub
+local function minimizeHub()
+    Window.Visible = false
+end
 
-    if not Window.Visible then
-        -- remove o botão depois de 0.1s para não travar input do celular
-        task.delay(0.1, function()
-            if toggleButton and toggleButton.Parent then
-                toggleButton:Destroy()
-            end
-        end)
+-- Close: esconde Hub e remove botão flutuante
+local function closeHub()
+    Window.Visible = false
+    if toggleButton and toggleButton.Parent then
+        toggleButton:Destroy()
     end
 end
 
--- ================================
--- SIMULA A TECLA K (como seu código C)
--- ================================
-local function simulateKeyPress(key)
+-- ToggleHub: usa a lógica do seu código C para simular tecla K
+local function toggleHub()
     local usedExploit = false
 
     if type(keypress) == "function" then
         local ok, _ = pcall(function()
-            keypress(key)
+            keypress(MINIMIZE_KEY)
             task.wait(0.05)
             if type(keyrelease) == "function" then
-                keyrelease(key)
+                keyrelease(MINIMIZE_KEY)
             end
         end)
         if ok then usedExploit = true end
@@ -117,25 +115,27 @@ local function simulateKeyPress(key)
 
     if not usedExploit and type(press_key) == "function" then
         local ok, _ = pcall(function()
-            press_key(key)
+            press_key(MINIMIZE_KEY)
             task.wait(0.05)
-            if type(release_key) == "function" then release_key(key) end
+            if type(release_key) == "function" then release_key(MINIMIZE_KEY) end
         end)
         usedExploit = ok
     end
 
-    -- fallback caso não haja funções de exploit
+    -- fallback: apenas minimiza se não houver exploit
     if not usedExploit then
-        toggleHub()
+        minimizeHub()
     end
 end
 
--- conecta o clique do botão flutuante
-toggleButton.MouseButton1Click:Connect(function()
-    simulateKeyPress(MINIMIZE_KEY)
-end)
+-- ================================
+-- CONECTA O BOTÃO FLUTUANTE
+-- ================================
+toggleButton.MouseButton1Click:Connect(toggleHub)
 
--- conecta a tecla K no teclado
+-- ================================
+-- CONECTA TECLA K
+-- ================================
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == MINIMIZE_KEY then
