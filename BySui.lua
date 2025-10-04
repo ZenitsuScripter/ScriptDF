@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.6",
+    Title = "Sui Hub v1.65",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -53,77 +53,15 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE) - LOGICA DO BOTÃO DA TECLA C
+-- TECLA K PARA TOGGLE DO HUB
 -- ================================
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
 local MINIMIZE_KEY = Enum.KeyCode.K
-
--- Cria ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SuiHubGUI"
-screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 999 -- ZIndex seguro
-screenGui.IgnoreGuiInset = false -- nunca esconde controles mobile
-screenGui.Parent = playerGui
-
--- Cria botão flutuante
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.fromOffset(50, 50)
-
--- Posição segura para mobile: canto superior esquerdo
-if UserInputService.TouchEnabled then
-    toggleButton.Position = UDim2.new(0, 10, 0, 50)
-else
-    toggleButton.Position = UDim2.new(0, 10, 0, 70)
-end
-
-toggleButton.AnchorPoint = Vector2.new(0, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleButton.Text = "K"
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.ZIndex = 1 -- baixo para não cobrir controles
-toggleButton.AutoButtonColor = true
-toggleButton.Draggable = true
-toggleButton.Parent = screenGui
-
--- ================================
--- FUNÇÃO DE TOGGLE DO HUB
--- ================================
-local function toggleHub()
-    Window.Visible = not Window.Visible
-end
-
--- ================================
--- MESMA LOGICA DO BOTÃO DA TECLA C
--- ================================
-local function LinkKey(Button, KeyCode)
-    if not Button then
-        warn("Botão não encontrado ou não definido.")
-        return
-    end
-    if not (Button:IsA("TextButton") or Button:IsA("ImageButton")) then
-        warn("Classe esperada: 'TextButton' ou 'ImageButton'. Obtido: '"..Button.ClassName.."'")
-        return
-    end
-
-    Button.MouseButton1Click:Connect(function()
-        if type(keypress) == "function" and type(keyrelease) == "function" then
-            keypress(KeyCode)
-            task.wait(0.05)
-            keyrelease(KeyCode)
-        end
-    end)
-end
-
--- vincula o botão flutuante à tecla K
-LinkKey(toggleButton, MINIMIZE_KEY)
 
 -- conecta a tecla K no teclado
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
     if gameProcessedEvent then return end
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == MINIMIZE_KEY then
-        toggleHub()
+        Window.Visible = not Window.Visible
     end
 end)
