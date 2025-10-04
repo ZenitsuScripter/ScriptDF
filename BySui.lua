@@ -7,13 +7,12 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.95",
+    Title = "Sui Hub v2.0",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
     Acrylic = true,
     Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.K,
     SaveConfig = false
 })
 
@@ -22,7 +21,8 @@ local Window = Fluent:CreateWindow({
 -- ================================
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
-    PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" })
+    PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
+    Discord = Window:AddTab({ Title = "Discord", Icon = "server" })
 }
 
 Window:SelectTab(1)
@@ -53,51 +53,22 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE)
+-- ABA DISCORD
 -- ================================
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local UserInputService = game:GetService("UserInputService")
-local MINIMIZE_KEY = Enum.KeyCode.K
+Tabs.Discord:AddParagraph({
+    Title = "Servidor Oficial do Sui Hub",
+    Content = "Entre na nossa comunidade para receber atualizações e suporte!"
+})
 
--- Cria ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SuiHubGUI"
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = false -- mantém controles mobile
-screenGui.DisplayOrder = 9999
-screenGui.Parent = playerGui
-
--- Cria botão flutuante
-local toggleButton = Instance.new("TextButton")
-toggleButton.Name = "ToggleHubButton"
-toggleButton.Size = UDim2.fromOffset(60, 60)
-toggleButton.Position = UDim2.new(0, 10, 0, 70) -- posição inicial
-toggleButton.AnchorPoint = Vector2.new(0, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-toggleButton.Text = "K"
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.TextScaled = true
-toggleButton.ZIndex = 1
-toggleButton.AutoButtonColor = true
-toggleButton.Draggable = true
-toggleButton.Parent = screenGui
-
--- ================================
--- FUNÇÃO DE MINIMIZAR (clicando no botão)
--- ================================
-local function minimizeHub()
-    Window.Visible = false -- só esconde o Hub
-end
-
-toggleButton.MouseButton1Click:Connect(minimizeHub)
-
--- ================================
--- TECLA K (alternar Hub)
--- ================================
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if gameProcessedEvent then return end
-    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == MINIMIZE_KEY then
-        Window.Visible = not Window.Visible -- alterna Hub
+Tabs.Discord:AddButton({
+    Title = "Copiar Link do Discord",
+    Description = "Copia o link de convite para a área de transferência",
+    Callback = function()
+        setclipboard("https://discord.gg/MG7EPpfWwu")
+        Fluent:Notify({
+            Title = "Link Copiado!",
+            Content = "O convite do Discord foi copiado para a área de transferência",
+            Duration = 5
+        })
     end
-end)
+})
