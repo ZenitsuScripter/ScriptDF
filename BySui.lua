@@ -13,7 +13,8 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(580, 400),
     Acrylic = true,
     Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl
+    MinimizeKey = Enum.KeyCode.LeftControl,
+    SaveConfig = false -- desativa salvar/carregar config antiga
 })
 
 -- ================================
@@ -23,6 +24,9 @@ local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" })
 }
+
+-- Seleciona a primeira aba por padrão
+Window:SelectTab(1)
 
 -- ================================
 -- BOTÕES ABA RAID
