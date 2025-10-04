@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.51",
+    Title = "Sui Hub v1.52",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(450, 350),
@@ -25,7 +25,6 @@ local Tabs = {
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" })
 }
 
--- Seleciona a primeira aba por padrão
 Window:SelectTab(1)
 
 -- ================================
@@ -54,7 +53,7 @@ Tabs.Raid:AddButton({
 })
 
 -- ================================
--- BOTÃO FLUTUANTE (PC + MOBILE) - SEM FUNÇÃO DE SUMIR
+-- BOTÃO FLUTUANTE (PC + MOBILE)
 -- ================================
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -65,8 +64,10 @@ local MINIMIZE_KEY = Enum.KeyCode.K
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SuiHubGUI"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
 screenGui.DisplayOrder = 9999
+
+-- Evita sumir controles mobile
+screenGui.IgnoreGuiInset = not UserInputService.TouchEnabled
 screenGui.Parent = playerGui
 
 -- Cria botão flutuante
@@ -77,7 +78,7 @@ toggleButton.AnchorPoint = Vector2.new(0,0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.Text = "K"
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleButton.ZIndex = 9999
+toggleButton.ZIndex = UserInputService.TouchEnabled and 1 or 9999 -- ZIndex seguro no mobile
 toggleButton.AutoButtonColor = true
 toggleButton.Draggable = true
 toggleButton.Parent = screenGui
@@ -90,41 +91,20 @@ local function toggleHub()
 end
 
 -- ================================
--- SIMULA A TECLA K (somente abre/fecha o hub)
+-- SIMULA TECLA (USANDO SOMENTE SEU CÓDIGO) - SEM FALLBACK
 -- ================================
-local function simulateKeyPress(key)
-    local usedExploit = false
-
-    if type(keypress) == "function" then
-        local ok, _ = pcall(function()
-            keypress(key)
-            task.wait(0.05)
-            if type(keyrelease) == "function" then
-                keyrelease(key)
-            end
-        end)
-        if ok then usedExploit = true end
+local function simulateKeyPress()
+    local keey = MINIMIZE_KEY
+    if type(keypress) == "function" and type(keyrelease) == "function" then
+        keypress(keey)
+        task.wait(0.05)
+        keyrelease(keey)
     end
-
-    if not usedExploit and type(press_key) == "function" then
-        local ok, _ = pcall(function()
-            press_key(key)
-            task.wait(0.05)
-            if type(release_key) == "function" then release_key(key) end
-        end)
-        usedExploit = ok
-    end
-
-    -- fallback caso não haja funções de exploit
-    if not usedExploit then
-        toggleHub()
-    end
+    -- se keypress/keyrelease não existirem, NÃO FAZ NADA
 end
 
 -- conecta o clique do botão flutuante
-toggleButton.MouseButton1Click:Connect(function()
-    simulateKeyPress(MINIMIZE_KEY)
-end)
+toggleButton.MouseButton1Click:Connect(simulateKeyPress)
 
 -- conecta a tecla K no teclado
 UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
