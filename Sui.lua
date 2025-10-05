@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.85",
+    Title = "Sui Hub v2.97",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -75,13 +75,14 @@ Tabs.Discord:AddButton({
 })
 
 -- ================================
--- ABA BOSS (SEM NOTIFICAÇÕES)
+-- ABA BOSS
 -- ================================
-local selectedBosses = {}
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local selectedBosses = {}
+local farming = false
 
--- Dropdown com mapeamento do Slayer Comum
+-- Dropdown de bosses
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
@@ -91,24 +92,21 @@ local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
 })
 
 MultiDropdown:OnChanged(function(values)
-    local mapped = {}
-    for _, v in ipairs(values) do
-        if v == "Slayer Comum" then
-            table.insert(mapped, "GenericSlayer")
-        else
-            table.insert(mapped, v)
-        end
-    end
-    selectedBosses = mapped
+    selectedBosses = values
 end)
 
-local farming = false
+-- Função para mapear nomes amigáveis
+local function mapBossName(name)
+    if name == "Slayer Comum" then return "GenericSlayer" end
+    return name
+end
 
--- Função para encontrar boss vivo
+-- Função para encontrar boss vivo (workspace e descendants)
 local function findBoss(name)
-    name = string.lower(name)
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and string.lower(obj.Name) == name then
+    local searchName = string.lower(mapBossName(name))
+
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and string.lower(obj.Name) == searchName then
             local hrp = obj:FindFirstChild("HumanoidRootPart")
             local hum = obj:FindFirstChildOfClass("Humanoid")
             if hrp and hum and hum.Health > 0 then
@@ -116,18 +114,37 @@ local function findBoss(name)
             end
         end
     end
+
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and string.lower(obj.Name) == searchName then
+            local hrp = obj:FindFirstChild("HumanoidRootPart")
+            local hum = obj:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.Health > 0 then
+                return obj
+            end
+        end
+    end
+
     return nil
 end
 
--- Função de ataque
+-- Função de ataque (Async M1)
 local function attackBoss()
     local args = {"Katana", "Server"}
     replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
 end
 
--- ================================
--- TOGGLE FARM
--- ================================
+-- Função para mover suavemente até o boss
+local function moveToTarget(targetPos)
+    local char = player.Character
+    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+    local hrp = char.HumanoidRootPart
+    local direction = (targetPos - hrp.Position).Unit
+    local newPos = hrp.Position + direction * 5
+    hrp.CFrame = CFrame.new(newPos, targetPos)
+end
+
+-- Toggle para farm automático
 Tabs.Boss:AddToggle("FarmToggle", {
     Title = "Auto Farm Boss",
     Description = "Ataca automaticamente os bosses selecionados",
@@ -136,10 +153,10 @@ Tabs.Boss:AddToggle("FarmToggle", {
         farming = state
 
         task.spawn(function()
-            while task.wait(0.1) do
+            while farming do
+                task.wait(0.05)
                 if not farming then break end
 
-                -- Procura o primeiro boss vivo na lista
                 local boss = nil
                 for _, name in ipairs(selectedBosses) do
                     boss = findBoss(name)
@@ -152,25 +169,22 @@ Tabs.Boss:AddToggle("FarmToggle", {
                 end
 
                 local char = player.Character
-                if not (char and char:FindFirstChild("HumanoidRootPart")) then continue end
-                local hrp = char.HumanoidRootPart
-                local bossHRP = boss:FindFirstChild("HumanoidRootPart")
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local bossHRP = boss and boss:FindFirstChild("HumanoidRootPart")
+                if not hrp or not bossHRP then continue end
 
-                if not bossHRP then continue end
                 local distance = (hrp.Position - bossHRP.Position).Magnitude
 
-                -- Teleporta se estiver longe
+                -- Teleporta se estiver muito longe
                 if distance > 100 then
-                    hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 3)
+                    hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
                 else
-                    -- Cola no boss e ataca
-                    pcall(function()
-                        hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 2)
-                        attackBoss()
-                    end)
+                    -- Move gradualmente e ataca
+                    hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
+                    attackBoss()
                 end
 
-                -- Para se o boss morrer
+                -- Se o boss morrer, passa para o próximo
                 local hum = boss:FindFirstChildOfClass("Humanoid")
                 if not hum or hum.Health <= 0 then
                     boss = nil
