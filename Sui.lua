@@ -75,7 +75,7 @@ Tabs.Discord:AddButton({
 })
 
 -- ================================
--- ABA BOSS
+-- ABA BOSS (SEM NOTIFICAÇÕES)
 -- ================================
 local selectedBosses = {}
 local player = game.Players.LocalPlayer
@@ -84,9 +84,9 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"GenericSlayer", "Boss2", "Boss3", "Boss4", "Boss5"},
+    Values = {"Kaigaku", "Boss2", "Boss3", "Boss4", "Boss5"},
     Multi = true,
-    Default = {"GenericSlayer"}
+    Default = {"Kaigaku"}
 })
 
 MultiDropdown:OnChanged(function(values)
