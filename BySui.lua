@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.3",
+    Title = "Sui Hub v1.0",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -137,7 +137,7 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
                 end
 
                 attackBoss()
-                task.wait(0.3)
+                task.wait(0.2)
 
                 if hum.Health <= 0 then
                     task.wait(1)
