@@ -84,7 +84,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"Kaigaku", "Boss2", "Boss3", "Boss4", "Boss5"},
+    Values = {"Kaigaku", "GenericSlayer", "GenericOni", "Zenitsu", "GreenDemon"},
     Multi = true,
     Default = {"Kaigaku"}
 })
