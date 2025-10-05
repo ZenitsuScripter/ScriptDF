@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v3.1",
+    Title = "Sui Hub v5.0",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -79,7 +79,7 @@ Tabs.Discord:AddButton({
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local autoRaid = false
-local raidBosses = {"ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
+local raidBosses = {"GenericSlayer","ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
 
 -- Função para equipar Katana
 local function equipKatana()
@@ -167,7 +167,7 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
 
                 -- Se o boss morrer, espera 1s antes de procurar outro
                 if hum.Health <= 0 then
-                    task.wait(1)
+                    task.wait(3)
                 end
             end
         end)
