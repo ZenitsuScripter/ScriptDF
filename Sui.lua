@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.75",
+    Title = "Sui Hub v2.85",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -81,16 +81,25 @@ local selectedBosses = {}
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Dropdown com mapeamento do Slayer Comum
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"Kaigaku", "GenericSlayer", "GenericOni", "Zenitsu", "GreenDemon"},
+    Values = {"Kaigaku", "Slayer Comum", "GenericOni", "Zenitsu", "GreenDemon"},
     Multi = true,
     Default = {"Kaigaku"}
 })
 
 MultiDropdown:OnChanged(function(values)
-    selectedBosses = values
+    local mapped = {}
+    for _, v in ipairs(values) do
+        if v == "Slayer Comum" then
+            table.insert(mapped, "GenericSlayer")
+        else
+            table.insert(mapped, v)
+        end
+    end
+    selectedBosses = mapped
 end)
 
 local farming = false
