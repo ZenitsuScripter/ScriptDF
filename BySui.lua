@@ -1,4 +1,3 @@
-
 -- ================================
 -- CARREGA FLUENT
 -- ================================
@@ -8,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v4.1",
+    Title = "Sui Hub v3.1",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -29,17 +28,13 @@ local Tabs = {
 Window:SelectTab(1)
 
 -- ================================
--- ABA RAID - BOTÕES EXISTENTES
+-- BOTÕES ABA RAID
 -- ================================
-local player = game.Players.LocalPlayer
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local autoRaidBoss = false
-local raidBosses = {"ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
-
 Tabs.Raid:AddButton({
     Title = "TP Raid",
     Description = "Teleport to Raid",
     Callback = function()
+        local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             player.Character.HumanoidRootPart.CFrame = CFrame.new(7084.1, 1752.3, 1385.2)
         end
@@ -50,69 +45,10 @@ Tabs.Raid:AddButton({
     Title = "TP NPC Raid",
     Description = "Teleport to NPC Raid",
     Callback = function()
+        local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             player.Character.HumanoidRootPart.CFrame = CFrame.new(-2379.6, 1179.4, -1425.4)
         end
-    end
-})
-
--- ================================
--- FUNÇÕES AUTO RAID BOSS
--- ================================
-local function findRaidBoss()
-    for _, name in ipairs(raidBosses) do
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("Model") and string.lower(obj.Name) == string.lower(name) then
-                local hrp = obj:FindFirstChild("HumanoidRootPart")
-                local hum = obj:FindFirstChildOfClass("Humanoid")
-                if hrp and hum and hum.Health > 0 then
-                    return obj
-                end
-            end
-        end
-    end
-    return nil
-end
-
-local function attackBoss()
-    local args = {"Katana", "Server"}
-    replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
-end
-
-local function equipKatana()
-    local args = {"Katana", "EquippedEvents", true, true}
-    replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
-end
-
--- ================================
--- TOGGLE AUTO RAID BOSS
--- ================================
-Tabs.Raid:AddToggle("AutoRaidBoss", {
-    Title = "Auto Boss Raid",
-    Description = "Ataca automaticamente todos os bosses da raid",
-    Default = false,
-    Callback = function(state)
-        autoRaidBoss = state
-        if autoRaidBoss then
-            equipKatana()
-        end
-
-        task.spawn(function()
-            while task.wait(0.1) do
-                if not autoRaidBoss then break end
-
-                local boss = findRaidBoss()
-                if boss and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local hrp = player.Character.HumanoidRootPart
-                    local bossHRP = boss:FindFirstChild("HumanoidRootPart")
-                    if bossHRP then
-                        -- Mantém a lógica de TP original sem alterações
-                        hrp.CFrame = bossHRP.CFrame + Vector3.new(0,2,0)
-                        attackBoss()
-                    end
-                end
-            end
-        end)
     end
 })
 
@@ -134,5 +70,106 @@ Tabs.Discord:AddButton({
             Content = "O convite do Discord foi copiado para a área de transferência",
             Duration = 5
         })
+    end
+})
+
+-- ================================
+-- AUTO RAID BOSS
+-- ================================
+local player = game.Players.LocalPlayer
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local autoRaid = false
+local raidBosses = {"ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
+
+-- Função para equipar Katana
+local function equipKatana()
+    local args = {"Katana","EquippedEvents",true,true}
+    replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
+end
+
+-- Função para encontrar o boss vivo
+local function findBoss()
+    for _, name in ipairs(raidBosses) do
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and string.lower(obj.Name) == string.lower(name) then
+                local hrp = obj:FindFirstChild("HumanoidRootPart")
+                local hum = obj:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.Health > 0 then
+                    return obj
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- Função de ataque
+local function attackBoss()
+    local args = {"Katana","Server"}
+    replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
+end
+
+-- Função para voar gradualmente até o boss (distância <=50)
+local function moveToBossGradual(targetPos)
+    local char = player.Character
+    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+    local hrp = char.HumanoidRootPart
+    local direction = (targetPos - hrp.Position).Unit
+    local newPos = hrp.Position + direction * 5 -- ajusta a cada loop
+    hrp.CFrame = CFrame.new(newPos, targetPos)
+end
+
+-- Cria toggle na aba Raid
+Tabs.Raid:AddToggle("AutoRaidBossToggle", {
+    Title = "Auto Boss Raid",
+    Description = "Ataca automaticamente todos os bosses da raid",
+    Default = false,
+    Callback = function(state)
+        autoRaid = state
+
+        if autoRaid then
+            -- Equipa Katana quando ligar
+            equipKatana()
+        end
+
+        task.spawn(function()
+            while task.wait(0.2) do
+                if not autoRaid then break end
+                if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then continue end
+
+                -- Verifica se o player morreu e renasceu
+                if not player.Character:FindFirstChild("HumanoidRootPart") then
+                    task.wait(1)
+                    equipKatana()
+                    continue
+                end
+
+                local boss = findBoss()
+                if not boss then continue end
+
+                local hrp = player.Character.HumanoidRootPart
+                local bossHRP = boss:FindFirstChild("HumanoidRootPart")
+                local hum = boss:FindFirstChildOfClass("Humanoid")
+                if not hrp or not bossHRP or not hum then continue end
+
+                local distance = (hrp.Position - bossHRP.Position).Magnitude
+
+                if distance > 50 then
+                    -- Teleporta diretamente se estiver longe
+                    hrp.CFrame = bossHRP.CFrame + Vector3.new(0,2,0)
+                else
+                    -- Cola e vai gradualmente até o boss
+                    moveToBossGradual(bossHRP.Position + Vector3.new(0,2,0))
+                end
+
+                -- Ataca
+                attackBoss()
+
+                -- Se o boss morrer, espera 1s antes de procurar outro
+                if hum.Health <= 0 then
+                    task.wait(1)
+                end
+            end
+        end)
     end
 })
