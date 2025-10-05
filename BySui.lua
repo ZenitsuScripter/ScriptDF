@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v3.0",
+    Title = "Sui Hub v3.5",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -75,7 +75,7 @@ Tabs.Discord:AddButton({
 })
 
 -- ================================
--- ABA BOSS (SEM NOTIFICAÇÕES)
+-- ABA BOSS (AUTOFARM TODOS OS SLOTS)
 -- ================================
 local selectedBosses = {}
 local player = game.Players.LocalPlayer
@@ -84,9 +84,9 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"Kaigaku", "KokushiboRaid", "Boss3", "Boss4", "Boss5"},
+    Values = {"Kaigaku", "RenkokuRaid", "GenericSlayer", "GenericOni", "Boss5"},
     Multi = true,
-    Default = {"Kaigaku"}
+    Default = {}
 })
 
 MultiDropdown:OnChanged(function(values)
@@ -127,10 +127,8 @@ Tabs.Boss:AddToggle("FarmToggle", {
         farming = state
 
         task.spawn(function()
-            while task.wait(0.1) do
-                if not farming then break end
-
-                -- Procura o primeiro boss vivo na lista
+            while farming do
+                -- Procura o próximo boss vivo na lista selecionada
                 local boss = nil
                 for _, name in ipairs(selectedBosses) do
                     boss = findBoss(name)
@@ -143,29 +141,29 @@ Tabs.Boss:AddToggle("FarmToggle", {
                 end
 
                 local char = player.Character
-                if not (char and char:FindFirstChild("HumanoidRootPart")) then continue end
+                if not (char and char:FindFirstChild("HumanoidRootPart")) then task.wait(0.1) continue end
                 local hrp = char.HumanoidRootPart
                 local bossHRP = boss:FindFirstChild("HumanoidRootPart")
+                if not bossHRP then task.wait(0.1) continue end
 
-                if not bossHRP then continue end
                 local distance = (hrp.Position - bossHRP.Position).Magnitude
 
-                -- Teleporta se estiver longe
+                -- Teleporta se estiver muito longe
                 if distance > 100 then
                     hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 3)
                 else
-                    -- Cola no boss e ataca
-                    pcall(function()
-                        hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 2)
-                        attackBoss()
-                    end)
+                    -- Move gradualmente e ataca
+                    hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 2)
+                    attackBoss()
                 end
 
-                -- Para se o boss morrer
+                -- Verifica se o boss morreu
                 local hum = boss:FindFirstChildOfClass("Humanoid")
                 if not hum or hum.Health <= 0 then
                     boss = nil
                 end
+
+                task.wait(0.1)
             end
         end)
     end
