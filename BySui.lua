@@ -13,6 +13,7 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(500, 350),
     Acrylic = true,
     Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.K,
     SaveConfig = false
 })
 
