@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.65",
+    Title = "Sui Hub v2.7",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -75,7 +75,7 @@ Tabs.Discord:AddButton({
 })
 
 -- ================================
--- ABA BOSS
+-- ABA BOSS (SEM NOTIFICAÇÕES)
 -- ================================
 local selectedBosses = {}
 local player = game.Players.LocalPlayer
@@ -95,7 +95,7 @@ end)
 
 local farming = false
 
--- Função para encontrar o boss
+-- Função para encontrar boss vivo
 local function findBoss(name)
     name = string.lower(name)
     for _, obj in pairs(workspace:GetDescendants()) do
@@ -110,24 +110,15 @@ local function findBoss(name)
     return nil
 end
 
--- Função de ataque M1
+-- Função de ataque
 local function attackBoss()
     local args = {"Katana", "Server"}
     replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
 end
 
--- Função de movimentação até o boss
-local function moveToTarget(targetPos)
-    local char = player.Character
-    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
-
-    local hrp = char.HumanoidRootPart
-    local direction = (targetPos - hrp.Position).Unit
-    local newPos = hrp.Position + direction * 5 -- move gradualmente
-    hrp.CFrame = CFrame.new(newPos, targetPos)
-end
-
--- Farm principal
+-- ================================
+-- TOGGLE FARM
+-- ================================
 Tabs.Boss:AddToggle("FarmToggle", {
     Title = "Auto Farm Boss",
     Description = "Ataca automaticamente os bosses selecionados",
@@ -135,64 +126,46 @@ Tabs.Boss:AddToggle("FarmToggle", {
     Callback = function(state)
         farming = state
 
-        if farming then
-            Fluent:Notify({
-                Title = "Sui Hub",
-                Content = "Farm iniciado.",
-                Duration = 3
-            })
-        else
-            Fluent:Notify({
-                Title = "Sui Hub",
-                Content = "Farm finalizado.",
-                Duration = 3
-            })
-        end
-
         task.spawn(function()
-            while farming do
-                local boss = nil
+            while task.wait(0.1) do
+                if not farming then break end
 
-                -- verifica o primeiro boss vivo
+                -- Procura o primeiro boss vivo na lista
+                local boss = nil
                 for _, name in ipairs(selectedBosses) do
                     boss = findBoss(name)
                     if boss then break end
                 end
 
                 if not boss then
-                    Fluent:Notify({
-                        Title = "Sui Hub",
-                        Content = "Nenhum boss vivo encontrado.",
-                        Duration = 3
-                    })
                     farming = false
                     break
                 end
 
                 local char = player.Character
-                if char and char:FindFirstChild("HumanoidRootPart") and boss:FindFirstChild("HumanoidRootPart") then
-                    local hrp = char.HumanoidRootPart
-                    local bossHRP = boss.HumanoidRootPart
-                    local distance = (hrp.Position - bossHRP.Position).Magnitude
+                if not (char and char:FindFirstChild("HumanoidRootPart")) then continue end
+                local hrp = char.HumanoidRootPart
+                local bossHRP = boss:FindFirstChild("HumanoidRootPart")
 
-                    if distance > 100 then
-                        -- Teleporta se estiver longe
-                        hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
-                    elseif distance > 5 then
-                        -- Move gradualmente até ele
-                        moveToTarget(bossHRP.Position + Vector3.new(0, 2, 0))
-                    else
-                        -- Ataca quando perto
+                if not bossHRP then continue end
+                local distance = (hrp.Position - bossHRP.Position).Magnitude
+
+                -- Teleporta se estiver longe
+                if distance > 100 then
+                    hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 3)
+                else
+                    -- Cola no boss e ataca
+                    pcall(function()
+                        hrp.CFrame = bossHRP.CFrame * CFrame.new(0, 0, 2)
                         attackBoss()
-                    end
+                    end)
                 end
 
-                -- Se o boss morrer, tenta o próximo
-                if boss and boss:FindFirstChildOfClass("Humanoid") and boss.Humanoid.Health <= 0 then
+                -- Para se o boss morrer
+                local hum = boss:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 then
                     boss = nil
                 end
-
-                task.wait(0.1)
             end
         end)
     end
