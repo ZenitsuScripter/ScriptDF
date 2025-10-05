@@ -32,7 +32,7 @@ Window:SelectTab(1)
 -- ================================
 Tabs.Raid:AddButton({
     Title = "TP Raid",
-    Description = "Teleport to Raid",
+    Description = "Teleporte para Raid",
     Callback = function()
         local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
@@ -43,7 +43,7 @@ Tabs.Raid:AddButton({
 
 Tabs.Raid:AddButton({
     Title = "TP NPC Raid",
-    Description = "Teleport to NPC Raid",
+    Description = "Teleporte para NPC Raid",
     Callback = function()
         local player = game.Players.LocalPlayer
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
