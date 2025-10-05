@@ -137,10 +137,10 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
                 end
 
                 attackBoss()
-                task.wait(0.2)
+                task.wait(0.5)
 
                 if hum.Health <= 0 then
-                    task.wait(1)
+                    task.wait(10)
                 end
             end
         end)
