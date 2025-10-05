@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v3.6",
+    Title = "Sui Hub v3.7",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -84,9 +84,9 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"Kaigaku", "KokushiboRaid", "GenericSlayer", "GenericOni", "GreenDemon"},
+    Values = {"KokushiboRaid", "Kaigaku", "GenericSlayer", "GenericOni", "GreenDemon"},
     Multi = true,
-    Default = {}
+    Default = {"KokushiboRaid"}
 })
 
 MultiDropdown:OnChanged(function(values)
