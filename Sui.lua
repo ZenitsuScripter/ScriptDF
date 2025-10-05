@@ -7,7 +7,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 -- CRIA A JANELA DO HUB
 -- ================================
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v2.97",
+    Title = "Sui Hub v2.65",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -77,16 +77,14 @@ Tabs.Discord:AddButton({
 -- ================================
 -- ABA BOSS
 -- ================================
+local selectedBosses = {}
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local selectedBosses = {}
-local farming = false
 
--- Dropdown de bosses
 local MultiDropdown = Tabs.Boss:AddDropdown("BossDropdown", {
     Title = "Bosses disponíveis",
     Description = "Selecione os bosses que deseja farmar",
-    Values = {"Kaigaku", "Slayer Comum", "GenericOni", "Zenitsu", "GreenDemon"},
+    Values = {"Kaigaku", "GenericSlayer", "GenericOni", "Zenitsu", "KokushiboRaid"},
     Multi = true,
     Default = {"Kaigaku"}
 })
@@ -95,28 +93,13 @@ MultiDropdown:OnChanged(function(values)
     selectedBosses = values
 end)
 
--- Função para mapear nomes amigáveis
-local function mapBossName(name)
-    if name == "Slayer Comum" then return "GenericSlayer" end
-    return name
-end
+local farming = false
 
--- Função para encontrar boss vivo (workspace e descendants)
+-- Função para encontrar o boss
 local function findBoss(name)
-    local searchName = string.lower(mapBossName(name))
-
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Model") and string.lower(obj.Name) == searchName then
-            local hrp = obj:FindFirstChild("HumanoidRootPart")
-            local hum = obj:FindFirstChildOfClass("Humanoid")
-            if hrp and hum and hum.Health > 0 then
-                return obj
-            end
-        end
-    end
-
+    name = string.lower(name)
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and string.lower(obj.Name) == searchName then
+        if obj:IsA("Model") and string.lower(obj.Name) == name then
             local hrp = obj:FindFirstChild("HumanoidRootPart")
             local hum = obj:FindFirstChildOfClass("Humanoid")
             if hrp and hum and hum.Health > 0 then
@@ -124,27 +107,27 @@ local function findBoss(name)
             end
         end
     end
-
     return nil
 end
 
--- Função de ataque (Async M1)
+-- Função de ataque M1
 local function attackBoss()
     local args = {"Katana", "Server"}
     replicatedStorage:WaitForChild("Remotes"):WaitForChild("Async"):FireServer(unpack(args))
 end
 
--- Função para mover suavemente até o boss
+-- Função de movimentação até o boss
 local function moveToTarget(targetPos)
     local char = player.Character
     if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+
     local hrp = char.HumanoidRootPart
     local direction = (targetPos - hrp.Position).Unit
-    local newPos = hrp.Position + direction * 5
+    local newPos = hrp.Position + direction * 5 -- move gradualmente
     hrp.CFrame = CFrame.new(newPos, targetPos)
 end
 
--- Toggle para farm automático
+-- Farm principal
 Tabs.Boss:AddToggle("FarmToggle", {
     Title = "Auto Farm Boss",
     Description = "Ataca automaticamente os bosses selecionados",
@@ -152,43 +135,64 @@ Tabs.Boss:AddToggle("FarmToggle", {
     Callback = function(state)
         farming = state
 
+        if farming then
+            Fluent:Notify({
+                Title = "Sui Hub",
+                Content = "Farm iniciado.",
+                Duration = 3
+            })
+        else
+            Fluent:Notify({
+                Title = "Sui Hub",
+                Content = "Farm finalizado.",
+                Duration = 3
+            })
+        end
+
         task.spawn(function()
             while farming do
-                task.wait(0.05)
-                if not farming then break end
-
                 local boss = nil
+
+                -- verifica o primeiro boss vivo
                 for _, name in ipairs(selectedBosses) do
                     boss = findBoss(name)
                     if boss then break end
                 end
 
                 if not boss then
+                    Fluent:Notify({
+                        Title = "Sui Hub",
+                        Content = "Nenhum boss vivo encontrado.",
+                        Duration = 3
+                    })
                     farming = false
                     break
                 end
 
                 local char = player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local bossHRP = boss and boss:FindFirstChild("HumanoidRootPart")
-                if not hrp or not bossHRP then continue end
+                if char and char:FindFirstChild("HumanoidRootPart") and boss:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    local bossHRP = boss.HumanoidRootPart
+                    local distance = (hrp.Position - bossHRP.Position).Magnitude
 
-                local distance = (hrp.Position - bossHRP.Position).Magnitude
-
-                -- Teleporta se estiver muito longe
-                if distance > 100 then
-                    hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
-                else
-                    -- Move gradualmente e ataca
-                    hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
-                    attackBoss()
+                    if distance > 100 then
+                        -- Teleporta se estiver longe
+                        hrp.CFrame = bossHRP.CFrame + Vector3.new(0, 2, 0)
+                    elseif distance > 5 then
+                        -- Move gradualmente até ele
+                        moveToTarget(bossHRP.Position + Vector3.new(0, 2, 0))
+                    else
+                        -- Ataca quando perto
+                        attackBoss()
+                    end
                 end
 
-                -- Se o boss morrer, passa para o próximo
-                local hum = boss:FindFirstChildOfClass("Humanoid")
-                if not hum or hum.Health <= 0 then
+                -- Se o boss morrer, tenta o próximo
+                if boss and boss:FindFirstChildOfClass("Humanoid") and boss.Humanoid.Health <= 0 then
                     boss = nil
                 end
+
+                task.wait(0.1)
             end
         end)
     end
