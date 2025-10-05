@@ -79,7 +79,7 @@ Tabs.Discord:AddButton({
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local autoRaid = false
-local raidBosses = {"GenericSlayer","ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
+local raidBosses = {"Zenitsu","ShinobuRaid", "RengokuRaid", "KokushiboRaid", "Yoriichi"}
 
 -- Função para equipar Katana
 local function equipKatana()
