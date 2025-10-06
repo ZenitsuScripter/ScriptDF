@@ -1,7 +1,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.1",
+    Title = "Sui Hub v1.0",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -22,9 +22,9 @@ local Tabs = {
 
 Window:SelectTab(1)
 
--- ================
+-- ================================
 -- BOTÕES ABA RAID
--- ================
+-- ================================
 Tabs.Raid:AddButton({
     Title = "TP Raid",
     Description = "Teleporte para Raid",
@@ -47,9 +47,9 @@ Tabs.Raid:AddButton({
     end
 })
 
--- ==============
--- AUTO BOSS RAID
--- ==============
+-- ================================
+-- AUTO BOSS RAID OTIMIZADO
+-- ================================
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local autoRaid = false
@@ -143,40 +143,8 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
 })
 
 -- ================================
--- ABA PLAYER TELEPORT (NOVA FUNÇÃO)
--- ================================
-Tabs.PlayerTeleport:AddParagraph({
-    Title = "Teleporte Personalizado(adm: Recomendo nao usar, estou testando)",
-    Content = "Digite o nome do NPC e clique em Teleportar"
-})
-
-local npcTextBox = Instance.new("TextBox")
-npcTextBox.Size = UDim2.new(0, 200, 0, 30)
-npcTextBox.Position = UDim2.new(0, 10, 0, 50)
-npcTextBox.PlaceholderText = "Nome do NPC"
-npcTextBox.Text = ""
-npcTextBox.ClearTextOnFocus = false
-npcTextBox.Parent = Tabs.PlayerTeleport.Frame
-
-local tpButton = Instance.new("TextButton")
-tpButton.Size = UDim2.new(0, 100, 0, 30)
-tpButton.Position = UDim2.new(0, 220, 0, 50)
-tpButton.Text = "Teleporte"
-tpButton.Parent = Tabs.PlayerTeleport.Frame
-
-tpButton.MouseButton1Click:Connect(function()
-    local npcName = npcTextBox.Text
-    if npcName == "" then return end
-    local player = game.Players.LocalPlayer
-    local npc = workspace:FindFirstChild(npcName)
-    if npc and npc:FindFirstChild("HumanoidRootPart") and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = npc.HumanoidRootPart.CFrame + Vector3.new(0,2,0)
-    end
-end)
-
--- ===========
 -- ABA DISCORD
--- ===========
+-- ================================
 Tabs.Discord:AddParagraph({
     Title = "Servidor Oficial do Sui Hub",
     Content = "Entre na nossa comunidade para receber atualizações e suporte!"
@@ -190,7 +158,7 @@ Tabs.Discord:AddButton({
         Fluent:Notify({
             Title = "Link Copiado!",
             Content = "O convite do Discord foi copiado para a área de transferência",
-            Duration = 3
+            Duration = 5
         })
     end
 })
