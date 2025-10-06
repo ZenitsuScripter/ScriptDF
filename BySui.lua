@@ -1,7 +1,10 @@
+-- ================================
+-- CARREGA FLUENT
+-- ================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.0",
+    Title = "Sui Hub v1.15",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -143,8 +146,10 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
 })
 
 -- ================================
--- ABA PLAYER TELEPORT COM DROPDOWN
+-- ABA TELEPORT COM DROPDOWN DE PLAYERS
 -- ================================
+local selectedPlayer = nil
+
 local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
     Title = "Selecionar Player",
     Description = "Escolha um player para teleportar",
@@ -152,6 +157,10 @@ local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
     Multi = false,
     Default = 1
 })
+
+PlayersDropdown:OnChanged(function(value)
+    selectedPlayer = value
+end)
 
 local function updatePlayerList()
     local players = game:GetService("Players"):GetPlayers()
@@ -162,7 +171,6 @@ local function updatePlayerList()
     PlayersDropdown:SetValues(names)
 end
 
--- Atualiza lista quando players entrarem ou saírem
 game.Players.PlayerAdded:Connect(updatePlayerList)
 game.Players.PlayerRemoving:Connect(updatePlayerList)
 updatePlayerList()
@@ -171,8 +179,8 @@ Tabs.PlayerTeleport:AddButton({
     Title = "Teleporte para o Player",
     Description = "Teleporta para o player selecionado",
     Callback = function()
-        local selected = PlayersDropdown:GetValue()
-        local target = game.Players:FindFirstChild(selected)
+        if not selectedPlayer then return end
+        local target = game.Players:FindFirstChild(selectedPlayer)
         if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
             game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
         end
