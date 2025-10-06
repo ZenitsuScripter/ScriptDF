@@ -146,7 +146,7 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
 -- ABA PLAYER TELEPORT (NOVA FUNÇÃO)
 -- ================================
 Tabs.PlayerTeleport:AddParagraph({
-    Title = "Teleporte Personalizado",
+    Title = "Teleporte Personalizado(adm: Recomendo nao usar, estou testando)",
     Content = "Digite o nome do NPC e clique em Teleportar"
 })
 
