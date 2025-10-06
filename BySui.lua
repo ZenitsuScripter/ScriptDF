@@ -143,6 +143,43 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
 })
 
 -- ================================
+-- ABA PLAYER TELEPORT COM DROPDOWN
+-- ================================
+local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
+    Title = "Selecionar Player",
+    Description = "Escolha um player para teleportar",
+    Values = {},
+    Multi = false,
+    Default = 1
+})
+
+local function updatePlayerList()
+    local players = game:GetService("Players"):GetPlayers()
+    local names = {}
+    for _, p in ipairs(players) do
+        table.insert(names, p.Name)
+    end
+    PlayersDropdown:SetValues(names)
+end
+
+-- Atualiza lista quando players entrarem ou saírem
+game.Players.PlayerAdded:Connect(updatePlayerList)
+game.Players.PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
+
+Tabs.PlayerTeleport:AddButton({
+    Title = "Teleporte para o Player",
+    Description = "Teleporta para o player selecionado",
+    Callback = function()
+        local selected = PlayersDropdown:GetValue()
+        local target = game.Players:FindFirstChild(selected)
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+        end
+    end
+})
+
+-- ================================
 -- ABA DISCORD
 -- ================================
 Tabs.Discord:AddParagraph({
