@@ -4,7 +4,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.15",
+    Title = "Sui Hub v1.20",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -155,7 +155,7 @@ local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
     Description = "Escolha um player para teleportar",
     Values = {},
     Multi = false,
-    Default = 1
+    Default = "Selecione"
 })
 
 PlayersDropdown:OnChanged(function(value)
