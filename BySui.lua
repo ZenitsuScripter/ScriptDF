@@ -11,9 +11,9 @@ local Window = Fluent:CreateWindow({
     SaveConfig = false
 })
 
--- ================
+-- =============
 -- ADICIONA ABAS
--- ================
+-- =============
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
@@ -22,9 +22,9 @@ local Tabs = {
 
 Window:SelectTab(1)
 
--- ================================
+-- ===============
 -- BOTÕES ABA RAID
--- ================================
+-- ===============
 Tabs.Raid:AddButton({
     Title = "TP Raid",
     Description = "Teleporte para Raid",
@@ -47,9 +47,9 @@ Tabs.Raid:AddButton({
     end
 })
 
--- ================================
--- AUTO BOSS RAID OTIMIZADO
--- ================================
+-- ==============
+-- AUTO BOSS RAID
+-- ==============
 local player = game.Players.LocalPlayer
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local autoRaid = false
@@ -142,9 +142,9 @@ Tabs.Raid:AddToggle("AutoRaidBossToggle", {
     end
 })
 
--- ================================
--- ABA TELEPORT COM DROPDOWN DE PLAYERS
--- ================================
+-- ====================
+-- ABA TELEPORT PLAYERS
+-- ====================
 local selectedPlayer = nil
 
 local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
@@ -184,9 +184,9 @@ Tabs.PlayerTeleport:AddButton({
     end
 })
 
--- ================================
--- AUTO TP TRINKETS INTEGRADO
--- ================================
+-- ================
+-- AUTO TP TRINKETS
+-- ================
 local TrinketPriority = {
     ["Perfect Crystal"] = 1,
     ["Green Jewel"] = 2,
