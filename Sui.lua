@@ -1,6 +1,3 @@
--- ================================
--- CARREGA FLUENT
--- ================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
@@ -14,9 +11,9 @@ local Window = Fluent:CreateWindow({
     SaveConfig = false
 })
 
--- ================================
+-- ================
 -- ADICIONA ABAS
--- ================================
+-- ================
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
@@ -188,8 +185,148 @@ Tabs.PlayerTeleport:AddButton({
 })
 
 -- ================================
--- ABA DISCORD
+-- AUTO TP TRINKETS INTEGRADO
 -- ================================
+local TrinketPriority = {
+    ["Perfect Crystal"] = 1,
+    ["Green Jewel"] = 2,
+    ["Red Jewel"] = 3,
+    ["Gold Crown"] = 4,
+    ["Ancient Coin"] = 5,
+    ["Gold Jar"] = 6,
+    ["Golden Ring"] = 7,
+    ["Gold Goblet"] = 8,
+    ["Silver Jar"] = 9,
+    ["Silver Ring"] = 10,
+    ["Silver Goblet"] = 11,
+    ["Bronze Jar"] = 12,
+    ["Copper Goblet"] = 13,
+    ["Rusty Goblet"] = 14
+}
+
+local ativo = false
+local checkpoint = nil
+local char = player.Character or player.CharacterAdded:Wait()
+local trinketsAtivos = {}
+
+local function getPosition(obj)
+    if obj:IsA("BasePart") then return obj.Position end
+    if obj:IsA("Model") then
+        if obj.PrimaryPart then return obj.PrimaryPart.Position end
+        for _, p in pairs(obj:GetDescendants()) do
+            if p:IsA("BasePart") then return p.Position end
+        end
+    end
+    return nil
+end
+
+local function interact(item)
+    for _, prompt in ipairs(item:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            pcall(function() fireproximityprompt(prompt) end)
+        end
+    end
+end
+
+local function addTrinket(item)
+    if TrinketPriority[item.Name] then
+        table.insert(trinketsAtivos, item)
+    end
+end
+
+local function removeTrinket(item)
+    for i,v in ipairs(trinketsAtivos) do
+        if v == item then
+            table.remove(trinketsAtivos, i)
+            break
+        end
+    end
+end
+
+local function processarTrinkets()
+    while ativo do
+        if #trinketsAtivos > 0 then
+            table.sort(trinketsAtivos, function(a,b)
+                return TrinketPriority[a.Name] < TrinketPriority[b.Name]
+            end)
+
+            local alvo = trinketsAtivos[1]
+            if alvo and alvo.Parent then
+                local pos = getPosition(alvo)
+                if pos and char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+                    task.wait(0.3)
+                    interact(alvo)
+                    removeTrinket(alvo)
+                    task.wait(0.5)
+                else
+                    removeTrinket(alvo)
+                end
+            else
+                removeTrinket(alvo)
+            end
+        else
+            if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
+            end
+            task.wait(0.3)
+        end
+        task.wait(0.1)
+    end
+end
+
+local function monitor(container)
+    for _, obj in pairs(container:GetChildren()) do
+        addTrinket(obj)
+    end
+    container.ChildAdded:Connect(function(child)
+        if ativo then addTrinket(child) end
+    end)
+    container.ChildRemoved:Connect(function(child)
+        removeTrinket(child)
+    end)
+end
+
+local function iniciarMonitoramento()
+    monitor(workspace)
+    monitor(replicatedStorage)
+end
+
+local function ativarAutoTP()
+    char = player.Character or player.CharacterAdded:Wait()
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    if not ativo then
+        checkpoint = char.HumanoidRootPart.Position
+        ativo = true
+        iniciarMonitoramento()
+        task.spawn(processarTrinkets)
+    end
+end
+
+local function desativarAutoTP()
+    ativo = false
+    if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
+    end
+    trinketsAtivos = {}
+end
+
+Tabs.PlayerTeleport:AddToggle("AutoTrinketToggle", {
+    Title = "Auto Trinkets",
+    Description = "Colete todos os trinkets automaticamente",
+    Default = false,
+    Callback = function(state)
+        if state then
+            ativarAutoTP()
+        else
+            desativarAutoTP()
+        end
+    end
+})
+
+-- ============
+-- ABA DISCORD
+-- ============
 Tabs.Discord:AddParagraph({
     Title = "Servidor Oficial do Sui Hub",
     Content = "Entre na nossa comunidade para receber atualizações e suporte!"
