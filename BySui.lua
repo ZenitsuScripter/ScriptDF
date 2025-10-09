@@ -17,7 +17,7 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
-    AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "gear" }),
+    AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "swords" }),
     Discord = Window:AddTab({ Title = "Discord", Icon = "server" })
 }
 
