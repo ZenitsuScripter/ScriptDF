@@ -1,7 +1,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.2",
+    Title = "Sui Hub v1.21",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -17,6 +17,7 @@ local Window = Fluent:CreateWindow({
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
+    AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "gear" }),
     Discord = Window:AddTab({ Title = "Discord", Icon = "server" })
 }
 
@@ -311,7 +312,7 @@ local function desativarAutoTP()
     trinketsAtivos = {}
 end
 
-Tabs.PlayerTeleport:AddToggle("AutoTrinketToggle", {
+Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
     Title = "Auto Trinkets",
     Description = "Colete todos os trinkets automaticamente",
     Default = false,
