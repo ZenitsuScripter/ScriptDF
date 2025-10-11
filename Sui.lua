@@ -1,27 +1,31 @@
--- // WindUI Loader
+-- // Carrega WindUI
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- // Cria a Janela Principal
+-- // Cria a janela principal
 local Window = WindUI:CreateWindow({
     Title = "Sui Hub v1.21",
     SubTitle = "by Suiryuu",
     Theme = "Dark",
     Size = UDim2.fromOffset(500, 350),
-    Transparent = false
+    Transparent = true,
+    Resizable = true
 })
 
--- // Cria Abas
-local RaidTab = Window:CreateTab("Raid", { Icon = "star" })
-local TeleportTab = Window:CreateTab("Teleport", { Icon = "eye" })
-local AutoFarmTab = Window:CreateTab("Auto Farm", { Icon = "swords" })
-local DiscordTab = Window:CreateTab("Discord", { Icon = "server" })
-
-Window:SelectTab(1)
+-- Toggle transparência e tecla de abrir/fechar
+Window:ToggleTransparency(true)
+Window:SetToggleKey(Enum.KeyCode.H)
 
 ---------------------------------------------------
 -- ABA RAID
 ---------------------------------------------------
-RaidTab:CreateButton({
+local RaidTab = Window:CreateTab("Raid", { Icon = "star" })
+local RaidSection = RaidTab:Section({
+    Title = "Raid Teleports",
+    Icon = "bird",
+    Opened = true
+})
+
+RaidSection:CreateButton({
     Title = "TP Raid",
     Description = "Teleporte para Raid",
     Callback = function()
@@ -32,7 +36,7 @@ RaidTab:CreateButton({
     end
 })
 
-RaidTab:CreateButton({
+RaidSection:CreateButton({
     Title = "TP NPC Raid",
     Description = "Teleporte para NPC Raid",
     Callback = function()
@@ -46,13 +50,18 @@ RaidTab:CreateButton({
 ---------------------------------------------------
 -- ABA TELEPORT
 ---------------------------------------------------
+local TeleportTab = Window:CreateTab("Teleport", { Icon = "eye" })
+local TeleportSection = TeleportTab:Section({
+    Title = "Teleport Players",
+    Icon = "bird",
+    Opened = true
+})
+
 local selectedPlayer = nil
-local PlayersDropdown = TeleportTab:CreateDropdown({
+local PlayersDropdown = TeleportSection:CreateDropdown({
     Title = "Selecionar Player",
-    Description = "Escolha um player para teleportar",
     Values = {},
-    Multi = false,
-    Default = "Selecione",
+    Value = "Selecione",
     Callback = function(value)
         selectedPlayer = value
     end
@@ -71,7 +80,7 @@ game.Players.PlayerAdded:Connect(updatePlayerList)
 game.Players.PlayerRemoving:Connect(updatePlayerList)
 updatePlayerList()
 
-TeleportTab:CreateButton({
+TeleportSection:CreateButton({
     Title = "Teleporte para o Player",
     Description = "Teleporta para o player selecionado",
     Callback = function()
@@ -84,8 +93,15 @@ TeleportTab:CreateButton({
 })
 
 ---------------------------------------------------
--- AUTO FARM TRINKETS
+-- ABA AUTO FARM
 ---------------------------------------------------
+local AutoFarmTab = Window:CreateTab("Auto Farm", { Icon = "swords" })
+local AutoFarmSection = AutoFarmTab:Section({
+    Title = "Auto Trinkets",
+    Icon = "bird",
+    Opened = true
+})
+
 local TrinketPriority = {
     ["Perfect Crystal"] = 1,
     ["Green Jewel"] = 2,
@@ -212,9 +228,10 @@ local function desativarAutoTP()
     trinketsAtivos = {}
 end
 
-AutoFarmTab:CreateToggle({
+AutoFarmSection:CreateToggle({
     Title = "Auto Trinkets",
-    Description = "Colete todos os trinkets automaticamente",
+    Desc = "Colete todos os trinkets automaticamente",
+    Icon = "bird",
     Default = false,
     Callback = function(state)
         if state then
@@ -226,14 +243,21 @@ AutoFarmTab:CreateToggle({
 })
 
 ---------------------------------------------------
--- DISCORD TAB
+-- ABA DISCORD
 ---------------------------------------------------
-DiscordTab:CreateParagraph({
-    Title = "Servidor Oficial do Sui Hub",
+local DiscordTab = Window:CreateTab("Discord", { Icon = "server" })
+local DiscordSection = DiscordTab:Section({
+    Title = "Servidor Oficial",
+    Icon = "bird",
+    Opened = true
+})
+
+DiscordSection:CreateParagraph({
+    Title = "Bem-vindo",
     Content = "Entre na nossa comunidade para receber atualizações e suporte!"
 })
 
-DiscordTab:CreateButton({
+DiscordSection:CreateButton({
     Title = "Copiar Link do Discord",
     Description = "Copia o link de convite para a área de transferência",
     Callback = function()
@@ -241,7 +265,8 @@ DiscordTab:CreateButton({
         WindUI:Notify({
             Title = "Link Copiado!",
             Content = "O convite do Discord foi copiado para a área de transferência",
-            Duration = 5
+            Duration = 5,
+            Icon = "bird"
         })
     end
 })
