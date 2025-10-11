@@ -3,7 +3,7 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 
 -- // Cria a janela principal
 local Window = WindUI:CreateWindow({
-    Title = "Sui Hub v1.21",
+    Title = "Sui Hub v1.22",
     SubTitle = "by Suiryuu",
     Theme = "Dark",
     Size = UDim2.fromOffset(500, 350),
