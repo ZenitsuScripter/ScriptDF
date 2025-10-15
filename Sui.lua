@@ -1,7 +1,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.3",
+    Title = "Sui Hub v1.21",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -93,9 +93,8 @@ Tabs.PlayerTeleport:AddButton({
 })
 
 -- =============
--- TREINADORES
+-- TREINADORES (Seção igual Raid/AutoFarm)
 -- =============
-
 local BreathLocations = {
     ["Água"] = CFrame.new(-926.5, 849.2, -989.1),
     ["Rocha"] = CFrame.new(-1707.1, 1045.5, -1371.2),
@@ -113,27 +112,25 @@ local BreathLocations = {
     ["Lua"] = CFrame.new(1833.4, 1121.7, -5949.5)
 }
 
--- Título acima do dropdown
-Tabs.PlayerTeleport:AddParagraph({
+-- Criando a seção Treinadores
+local TreinadoresSection = Tabs.PlayerTeleport:AddSection({
     Title = "Treinadores",
-    Content = ""
+    Box = true -- deixa com uma caixa ao redor
 })
 
--- Dropdown Respirações
-local RespDropdown = Tabs.PlayerTeleport:AddDropdown("RespDropdown", {
+-- Dropdown de Respirações dentro da seção
+TreinadoresSection:AddDropdown("RespDropdown", {
     Title = "Respirações",
     Description = "Selecione uma respiração",
     Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Nevoa", "Vento", "Trovão", "Sol", "Lua"},
     Multi = false,
     Default = "Água"
-})
-
-RespDropdown:OnChanged(function(value)
+}):OnChanged(function(value)
     selectedBreath = value
 end)
 
--- Botão Teleportar
-Tabs.PlayerTeleport:AddButton({
+-- Botão Teleportar dentro da seção
+TreinadoresSection:AddButton({
     Title = "Teleportar",
     Description = "",
     Callback = function()
