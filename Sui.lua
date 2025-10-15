@@ -56,7 +56,7 @@ local selectedBreath = nil
 
 local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
     Title = "Teleporte Player",
-    Description = "Teleporte para o Player Selecionado",
+    Description = "Selecione um Player",
     Values = {},
     Multi = false,
     Default = "Selecionar"
@@ -91,9 +91,9 @@ Tabs.PlayerTeleport:AddButton({
     end
 })
 
--- =============
+-- ===========
 -- TREINADORES
--- =============
+-- ===========
 
 local BreathLocations = {
     ["Água"] = CFrame.new(-926.5, 849.2, -989.1),
@@ -105,7 +105,7 @@ local BreathLocations = {
     ["Som"] = CFrame.new(-1258.8, 873.0, -6438.8),
     ["Flor"] = CFrame.new(-1315.6, 878.4, -6236.8),
     ["Inseto"] = CFrame.new(-1642.8, 912.3, -6488.4),
-    ["Nevoa"] = CFrame.new(3235.8, 784.7, -4046.5),
+    ["Névoa"] = CFrame.new(3235.8, 784.7, -4046.5),
     ["Vento"] = CFrame.new(-3288.6, 712.6, -1255.1),
     ["Trovão"] = CFrame.new(-699.1, 700.0, 538.6),
     ["Sol"] = CFrame.new(389.2, 821.8, -416.5),
@@ -117,7 +117,7 @@ local RespDropdown = Tabs.PlayerTeleport:AddDropdown("RespDropdown", {
     Description = "Selecione uma respiração",
     Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Névoa", "Vento", "Trovão", "Sol", "Lua"},
     Multi = false,
-    Default = "Selecione"
+    Default = "Selecionar"
 })
 
 RespDropdown:OnChanged(function(value)
@@ -126,7 +126,7 @@ end)
 
 Tabs.PlayerTeleport:AddButton({
     Title = "Teleporte para a Respiração",
-    Description = "Teleportar para a Respiração Selecionada",
+    Description = "Teleporte para a Respiração Selecionada",
     Callback = function()
         local player = game.Players.LocalPlayer
         local char = player.Character or player.CharacterAdded:Wait()
@@ -280,9 +280,9 @@ Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
     end
 })
 
--- ============
+-- ===========
 -- ABA DISCORD
--- ============
+-- ===========
 Tabs.Discord:AddParagraph({
     Title = "Servidor Oficial do Sui Hub",
     Content = "Entre na nossa comunidade para receber atualizações e suporte!"
