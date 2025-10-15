@@ -54,7 +54,6 @@ Tabs.Raid:AddButton({
 local selectedPlayer = nil
 local selectedBreath = nil
 
--- Dropdown de players
 local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
     Title = "Selecionar Player",
     Description = "Escolha um player para teleportar",
@@ -93,8 +92,9 @@ Tabs.PlayerTeleport:AddButton({
 })
 
 -- =============
--- TREINADORES (Seção igual Raid/AutoFarm)
+-- TREINADORES
 -- =============
+
 local BreathLocations = {
     ["Água"] = CFrame.new(-926.5, 849.2, -989.1),
     ["Rocha"] = CFrame.new(-1707.1, 1045.5, -1371.2),
@@ -112,27 +112,21 @@ local BreathLocations = {
     ["Lua"] = CFrame.new(1833.4, 1121.7, -5949.5)
 }
 
--- Criando a seção Treinadores
-local TreinadoresSection = Tabs.PlayerTeleport:AddSection({
-    Title = "Treinadores",
-    Box = true -- deixa com uma caixa ao redor
-})
-
--- Dropdown de Respirações dentro da seção
-TreinadoresSection:AddDropdown("RespDropdown", {
+local RespDropdown = Tabs.PlayerTeleport:AddDropdown("RespDropdown", {
     Title = "Respirações",
     Description = "Selecione uma respiração",
     Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Nevoa", "Vento", "Trovão", "Sol", "Lua"},
     Multi = false,
-    Default = "Água"
-}):OnChanged(function(value)
+    Default = "Selecione"
+})
+
+RespDropdown:OnChanged(function(value)
     selectedBreath = value
 end)
 
--- Botão Teleportar dentro da seção
-TreinadoresSection:AddButton({
+Tabs.PlayerTeleport:AddButton({
     Title = "Teleportar",
-    Description = "",
+    Description = "Teleportar para a respiração selecionada",
     Callback = function()
         local player = game.Players.LocalPlayer
         local char = player.Character or player.CharacterAdded:Wait()
