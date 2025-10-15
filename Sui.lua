@@ -55,11 +55,11 @@ local selectedPlayer = nil
 local selectedBreath = nil
 
 local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
-    Title = "Selecionar Player",
-    Description = "Escolha um player para teleportar",
+    Title = "Teleporte Player",
+    Description = "Teleporte para o Player Selecionado",
     Values = {},
     Multi = false,
-    Default = "Selecione"
+    Default = "Selecionar"
 })
 
 PlayersDropdown:OnChanged(function(value)
@@ -81,7 +81,7 @@ updatePlayerList()
 
 Tabs.PlayerTeleport:AddButton({
     Title = "Teleporte para o Player",
-    Description = "Teleporta para o player selecionado",
+    Description = "Teleporte para o Player Selecionado",
     Callback = function()
         if not selectedPlayer then return end
         local target = game.Players:FindFirstChild(selectedPlayer)
@@ -115,7 +115,7 @@ local BreathLocations = {
 local RespDropdown = Tabs.PlayerTeleport:AddDropdown("RespDropdown", {
     Title = "Respirações",
     Description = "Selecione uma respiração",
-    Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Nevoa", "Vento", "Trovão", "Sol", "Lua"},
+    Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Névoa", "Vento", "Trovão", "Sol", "Lua"},
     Multi = false,
     Default = "Selecione"
 })
@@ -125,8 +125,8 @@ RespDropdown:OnChanged(function(value)
 end)
 
 Tabs.PlayerTeleport:AddButton({
-    Title = "Teleporte para o Treinador",
-    Description = "Teleportar para a respiração selecionada",
+    Title = "Teleporte para a Respiração",
+    Description = "Teleportar para a Respiração Selecionada",
     Callback = function()
         local player = game.Players.LocalPlayer
         local char = player.Character or player.CharacterAdded:Wait()
