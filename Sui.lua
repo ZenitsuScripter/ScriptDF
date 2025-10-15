@@ -1,7 +1,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.35",
+    Title = "Sui Hub v1.3",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -125,7 +125,7 @@ RespDropdown:OnChanged(function(value)
 end)
 
 Tabs.PlayerTeleport:AddButton({
-    Title = "Teleportar",
+    Title = "Teleporte para o Treinador",
     Description = "Teleportar para a respiração selecionada",
     Callback = function()
         local player = game.Players.LocalPlayer
