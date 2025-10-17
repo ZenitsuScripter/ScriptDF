@@ -1,6 +1,6 @@
---[[ 💀 SuiHub - GenericOni Autofarm with GUI + Teleport 💀 ]]--
+--[[ 👹 Zenitsu/Green Demon Autofarm GUI 👹 ]]--
 
-_G.mob = "GenericOni"
+_G.mob = "Zenitsu"
 _G.noclip = true
 _G.speed = 45
 _G.distFromMob = 6
@@ -17,11 +17,17 @@ local ws = game:service"Workspace"
 local runs = game:service"RunService"
 local vim = game:service"VirtualInputManager"
 
+local spawns = {
+	["Zenitsu"] = CFrame.new(-2537.05, 941.43, -3351.02),
+	["Green Demon"] = CFrame.new(1474.98, 818.82, -6379.07)
+}
+local drops = {"Green Horn", "Demon Horn", "Broken Nichirin", "Crystal Essence", "Demon Collar"}
+
 ----------------------------------
--- GUI (Flutuante + Persistente) --
+-- GUI Flutuante
 ----------------------------------
 local gui = Instance.new("ScreenGui")
-gui.Name = "SuiHubFarmGUI"
+gui.Name = "AutofarmGUI"
 gui.ResetOnSpawn = false
 gui.Parent = game.CoreGui
 
@@ -36,7 +42,7 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, 0, 0.5, 0)
-label.Text = "👹 GenericOni Farm"
+label.Text = "👹 Autofarm"
 label.TextColor3 = Color3.fromRGB(255,255,255)
 label.Font = Enum.Font.GothamBold
 label.BackgroundTransparency = 1
@@ -57,15 +63,14 @@ button.Parent = frame
 button.MouseButton1Click:Connect(function()
 	_G.autofarm = not _G.autofarm
 	if _G.autofarm then
-		button.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+		button.BackgroundColor3 = Color3.fromRGB(0,200,0)
 		button.Text = "✅ Ativado"
 	else
-		button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+		button.BackgroundColor3 = Color3.fromRGB(200,0,0)
 		button.Text = "⛔ Desativado"
 	end
 end)
 
--- Recria GUI após respawn
 lp.CharacterAdded:Connect(function()
 	task.wait(2)
 	gui.Parent = game.CoreGui
@@ -105,12 +110,12 @@ else
 	style = "Combat"
 end
 
--- Encontra o GenericOni mais próximo
+-- Encontra o mob mais próximo
 local function getClosestMob()
 	local temp = nil
 	for _,v in next, ws:GetChildren() do
-		if v:IsA("Model") and v.Name == _G.mob and v:FindFirstChild("HumanoidRootPart")
-		and v:FindFirstChild("Health") and v.Health.Value > 0 and not v:FindFirstChild("Down") then
+		if v:IsA("Model") and v.Name == _G.mob and v:FindFirstChild("HumanoidRootPart") 
+			and v:FindFirstChild("Health") and v.Health.Value>0 and not v:FindFirstChild("Down") then
 			if not temp or (v.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude <
 				(temp.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude then
 				temp = v
@@ -120,16 +125,16 @@ local function getClosestMob()
 	return temp
 end
 
--- Coleta todos os drops
+-- Coleta drops automaticamente
 ws.ChildAdded:Connect(function(c)
 	task.spawn(function()
 		if c.Name == "DropItem" then
-			c:WaitForChild("ItemName", 5)
-			rs.Remotes.Async:FireServer("Character", "Interaction", c)
+			c:WaitForChild("ItemName",5)
+			rs.Remotes.Async:FireServer("Character","Interaction",c)
 			task.wait(0.2)
-			vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+			vim:SendKeyEvent(true,Enum.KeyCode.E,false,game)
 			task.wait(0.3)
-			vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+			vim:SendKeyEvent(false,Enum.KeyCode.E,false,game)
 		end
 	end)
 end)
@@ -141,7 +146,7 @@ pcall(function()
 	while task.wait() do
 		if _G.autofarm and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
 			
-			-- ⚔️ Equipa Katana automaticamente
+			-- Autoequip Katana
 			if style == "Katana" and not lp.Character:FindFirstChild("Katana") then
 				local inv = lp.Backpack:FindFirstChild("Katana")
 				if inv then
@@ -155,39 +160,36 @@ pcall(function()
 
 			local dist = (closest.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude
 
-			-- Se estiver longe (>30 studs), teleportar 15 studs próximo
-			if dist > 30 then
+			-- Teleporta 15 studs se estiver >30 studs
+			if dist>30 then
 				local direction = (closest.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Unit
-				local targetPos = closest.HumanoidRootPart.Position - direction * 15
-				lp.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos, closest.HumanoidRootPart.Position)
+				local targetPos = closest.HumanoidRootPart.Position - direction*15
+				lp.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos,closest.HumanoidRootPart.Position)
 			else
-				-- Se estiver próximo, usar tween normal
-				local t = dist / _G.speed
-				local tweenInfo = TweenInfo.new(t, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-				local tween = ts:Create(lp.Character.HumanoidRootPart, tweenInfo, {
-					CFrame = CFrame.new((closest.HumanoidRootPart.Position + Vector3.new(0, _G.distFromMob, 0)), closest.HumanoidRootPart.Position)
+				local t = dist/_G.speed
+				local tweenInfo = TweenInfo.new(t,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+				local tween = ts:Create(lp.Character.HumanoidRootPart,tweenInfo,{
+					CFrame = CFrame.new((closest.HumanoidRootPart.Position + Vector3.new(0,_G.distFromMob,0)), closest.HumanoidRootPart.Position)
 				})
 				tween:Play()
-				repeat task.wait() until (closest.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude <= 100
+				repeat task.wait() until (closest.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude<=100
 				tween:Cancel()
 			end
 
 			_G.notExecuted = true
 			repeat
 				task.wait()
-				lp.Character.HumanoidRootPart.CFrame =
-					CFrame.new((closest.HumanoidRootPart.Position + Vector3.new(0, _G.distFromMob, 0)),
-						closest.HumanoidRootPart.Position)
+				lp.Character.HumanoidRootPart.CFrame = CFrame.new((closest.HumanoidRootPart.Position + Vector3.new(0,_G.distFromMob,0)), closest.HumanoidRootPart.Position)
 
 				if closest:FindFirstChild("Block") and not closest:FindFirstChild("Ragdoll") then
-					if lp.Stamina.Value >= 20 then
-						rs.Remotes.Async:FireServer(style, "Heavy")
+					if lp.Stamina.Value>=20 then
+						rs.Remotes.Async:FireServer(style,"Heavy")
 					end
 				end
-				
+
 				if not closest:FindFirstChild("Ragdoll") and not closest:FindFirstChild("Block") then
 					task.wait(0.45)
-					rs.Remotes.Async:FireServer(style, "Server")
+					rs.Remotes.Async:FireServer(style,"Server")
 				end
 
 				if closest:FindFirstChild("Down") then
@@ -195,9 +197,9 @@ pcall(function()
 					repeat
 						task.wait()
 						lp.Character.HumanoidRootPart.CFrame = closest.HumanoidRootPart.CFrame
-						rs.Remotes.Sync:InvokeServer("Character", "Execute")
+						rs.Remotes.Sync:InvokeServer("Character","Execute")
 						count += 1
-					until closest:FindFirstChild("Executed") or count > 10
+					until closest:FindFirstChild("Executed") or count>10
 					_G.notExecuted = false
 				end
 			until not _G.autofarm or not _G.notExecuted
