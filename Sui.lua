@@ -68,38 +68,28 @@ task.spawn(function()
 				local mobHRP = mob.HumanoidRootPart
 				local dist = (mobHRP.Position - hrp.Position).Magnitude
 				
-				-- Teleporta 15 studs perto se estiver longe
+				-- Teleporta 15 studs perto se estiver distante
 				if dist > 30 then
 					hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 15, 0)
 				end
 				
-				-- Posiciona deitado, 5 studs acima
-				local aboveCF = mobHRP.CFrame * CFrame.new(0, 5, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+				-- Posiciona deitado, 6 studs acima do mob
+				local aboveCF = mobHRP.CFrame * CFrame.new(0, 6, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 				hrp.Anchored = true
 				hrp.CFrame = aboveCF
 				
-				-- Detecta se é Demon Slayer pra usar katana
+				-- Define estilo de ataque
 				local style = "Combat"
 				if getrenv()._G.PlayerData and getrenv()._G.PlayerData.Race == "Demon Slayer" then
 					style = "Katana"
 				end
 				
-				-- Atacar até o mob cair
-				if mob:FindFirstChild("Health") and mob.Health.Value > 0 and not mob:FindFirstChild("Down") then
-					ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
+				-- Ataca só se não estiver com Block
+				if mob:FindFirstChild("Health") and mob.Health.Value > 0 then
+					if not mob:FindFirstChild("Block") then
+						ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
+					end
 					task.wait(0.45)
-				end
-				
-				-- Execução automática
-				if mob:FindFirstChild("Down") and mob.Health.Value <= 0 then
-					local count = 0
-					repeat
-						task.wait(0.5)
-						VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.B, false, game)
-						task.wait(0.2)
-						VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.B, false, game)
-						count += 1
-					until mob:FindFirstChild("Executed") or count >= 20
 				end
 			else
 				if hrp.Anchored then hrp.Anchored = false end
