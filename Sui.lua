@@ -1,103 +1,114 @@
--- Services
+--// Serviços
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
 local lp = Players.LocalPlayer
+local ws = game:GetService("Workspace")
 
--- Config
+--// Configurações
 _G.autofarm = false
 _G.noclip = true
 _G.speed = 45
-_G.distFromMob = 6
+_G.mobName = "GenericSlayer"
+_G.distCheck = 30
+_G.aboveDist = 2
 
--- Detecta estilo
+--// Detectar estilo de ataque
 local style = ""
-if getrenv()._G.PlayerData.Race == "Demon Slayer" then
-    style = "Katana"
+if getrenv()._G.PlayerData and getrenv()._G.PlayerData.Race == "Demon Slayer" then
+	style = "Katana"
 else
-    style = "Combat"
+	style = "Combat"
 end
 
--- Função noclip real
+--// Função noclip confiável
 RunService.RenderStepped:Connect(function()
-    if _G.noclip and lp.Character then
-        for _, part in pairs(lp.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
+	if _G.noclip and lp.Character then
+		for _, part in pairs(lp.Character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
 end)
 
--- Função pra pegar o mob mais próximo pelo nome
-local function getClosestMob(name)
-    local temp = nil
-    for _, v in pairs(workspace:GetChildren()) do
-        if v:IsA("Model") and v.Name == name and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Health") and v.Health.Value > 0 then
-            if not temp or (v.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude < 
-               (temp.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude then
-                temp = v
-            end
-        end
-    end
-    return temp
+--// Pegar mob mais próximo
+local function getClosestMob()
+	local closest, dist = nil, math.huge
+	for _, v in pairs(ws:GetChildren()) do
+		if v:IsA("Model") and v.Name == _G.mobName and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Health") and v.Health.Value > 0 then
+			local mag = (lp.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
+			if mag < dist then
+				closest, dist = v, mag
+			end
+		end
+	end
+	return closest, dist
 end
 
--- Loop autofarm
+--// Loop principal do autofarm
 coroutine.wrap(function()
-    while true do
-        wait(0.1)
-        if _G.autofarm and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and _G.mobName then
-            local mob = getClosestMob(_G.mobName)
-            if mob then
-                local dist = (mob.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude
-                -- Teleporta para 15 studs de distância
-                local direction = (lp.Character.HumanoidRootPart.Position - mob.HumanoidRootPart.Position).Unit
-                lp.Character.HumanoidRootPart.CFrame = CFrame.new(mob.HumanoidRootPart.Position + direction*15, mob.HumanoidRootPart.Position)
-                
-                -- Ataque simples
-                if mob:FindFirstChild("Block") then
-                    if lp:FindFirstChild("Stamina") and lp.Stamina.Value >= 20 then
-                        ReplicatedStorage.Remotes.Async:FireServer(style, "Heavy")
-                    end
-                else
-                    ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
-                end
-            end
-        end
-    end
+	while task.wait(0.1) do
+		if _G.autofarm and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+			local mob, distance = getClosestMob()
+			if mob then
+				local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+				if mobHRP then
+					local targetPos = mobHRP.Position + Vector3.new(0, _G.aboveDist, 0)
+					
+					-- Teleporta caso esteja longe
+					if distance > _G.distCheck then
+						lp.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 30, 0))
+					end
+					
+					-- Ajusta posição com tween (suavemente desce)
+					local tween = TweenService:Create(
+						lp.Character.HumanoidRootPart,
+						TweenInfo.new(0.2, Enum.EasingStyle.Linear),
+						{CFrame = CFrame.new(targetPos, mobHRP.Position - Vector3.new(0, 5, 0))}
+					)
+					tween:Play()
+					
+					-- Ataque
+					task.wait(0.2)
+					if mob:FindFirstChild("Block") then
+						ReplicatedStorage.Remotes.Async:FireServer(style, "Heavy")
+					else
+						ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
+					end
+				end
+			end
+		end
+	end
 end)()
 
--- GUI simples
+--// GUI flutuante simples
 local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
 ScreenGui.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 220, 0, 100)
+Frame.Size = UDim2.new(0, 180, 0, 60)
 Frame.Position = UDim2.new(0, 20, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.Active = true
 Frame.Draggable = true
+Frame.BorderSizePixel = 0
+Frame.BackgroundTransparency = 0.1
 
-local TextBox = Instance.new("TextBox", Frame)
-TextBox.PlaceholderText = "Nome do Mob"
-TextBox.Size = UDim2.new(0, 200, 0, 30)
-TextBox.Position = UDim2.new(0, 10, 0, 10)
-TextBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
-TextBox.TextColor3 = Color3.new(1,1,1)
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(1, -20, 1, -20)
+Toggle.Position = UDim2.new(0, 10, 0, 10)
+Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.Text = "Ativar Autofarm"
+Toggle.Font = Enum.Font.Gotham
+Toggle.TextSize = 16
+Toggle.BorderSizePixel = 0
 
-local ToggleButton = Instance.new("TextButton", Frame)
-ToggleButton.Size = UDim2.new(0, 200, 0, 30)
-ToggleButton.Position = UDim2.new(0, 10, 0, 50)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(70,70,70)
-ToggleButton.TextColor3 = Color3.new(1,1,1)
-ToggleButton.Text = "Ativar Autofarm"
-
-ToggleButton.MouseButton1Click:Connect(function()
-    _G.autofarm = not _G.autofarm
-    _G.mobName = TextBox.Text ~= "" and TextBox.Text or nil
-    ToggleButton.Text = _G.autofarm and "Desativar Autofarm" or "Ativar Autofarm"
+Toggle.MouseButton1Click:Connect(function()
+	_G.autofarm = not _G.autofarm
+	Toggle.Text = _G.autofarm and "Desativar Autofarm" or "Ativar Autofarm"
+	Toggle.BackgroundColor3 = _G.autofarm and Color3.fromRGB(0, 170, 70) or Color3.fromRGB(50, 50, 50)
 end)
