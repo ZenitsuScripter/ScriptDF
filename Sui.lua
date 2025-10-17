@@ -14,7 +14,7 @@ local targetMobName = "GenericSlayer"
 local style = getrenv()._G.PlayerData.Race == "Demon Slayer" and "Katana" or "Combat"
 local distFromMob = 6
 
--- Auto-equip Katana
+-- Auto-equip Katana se for Slayer
 if style == "Katana" then
     local args = {"Katana", "EquippedEvents", true, true}
     rs.Remotes.Async:FireServer(unpack(args))
@@ -23,26 +23,21 @@ end
 -- GUI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = lp:WaitForChild("PlayerGui")
-ScreenGui.Name = "PremiumAutoFarm"
+ScreenGui.Name = "AutoFarmGUI"
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 220, 0, 140)
 MainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 MainFrame.BorderSizePixel = 0
-MainFrame.AnchorPoint = Vector2.new(0,0)
-MainFrame.Parent = ScreenGui
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true
-MainFrame.ZIndex = 2
+MainFrame.Parent = ScreenGui
 
--- Shadow (falso flutuante)
-local Shadow = Instance.new("UICorner")
-Shadow.CornerRadius = UDim.new(0, 10)
-Shadow.Parent = MainFrame
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
 
--- Title
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,30)
 Title.BackgroundTransparency = 1
@@ -76,6 +71,7 @@ ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 14
 ToggleButton.Parent = MainFrame
 
+-- Toggle logic
 ToggleButton.MouseButton1Click:Connect(function()
     autofarm = not autofarm
     ToggleButton.Text = "Autofarm: " .. (autofarm and "ON" or "OFF")
@@ -96,7 +92,7 @@ local function getClosestMob()
     return closest
 end
 
--- Função de seguir o mob
+-- Seguir mob
 local function followMob(mob)
     local hrp = lp.Character.HumanoidRootPart
     local mobPos = mob.HumanoidRootPart.Position
@@ -104,7 +100,7 @@ local function followMob(mob)
     
     local dist = (hrp.Position - mobPos).Magnitude
     if dist > 30 then
-        hrp.CFrame = CFrame.new(targetPos)
+        hrp.CFrame = CFrame.new(targetPos, mobPos) * CFrame.Angles(math.rad(-90),0,0)
         wait(0.1)
     else
         local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Linear)
@@ -113,9 +109,8 @@ local function followMob(mob)
     end
 end
 
--- Função de ataque
+-- Ataque
 local function attackMob(mob)
-    local hrp = lp.Character.HumanoidRootPart
     if mob:FindFirstChild("Block") then
         if lp.Stamina.Value >= 20 then
             rs.Remotes.Async:FireServer(style, "Heavy")
