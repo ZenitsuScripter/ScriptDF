@@ -1,114 +1,121 @@
---// Serviços
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-
-local lp = Players.LocalPlayer
-local ws = game:GetService("Workspace")
-
---// Configurações
+-- // CONFIG
 _G.autofarm = false
 _G.noclip = true
-_G.speed = 45
-_G.mobName = "GenericSlayer"
-_G.distCheck = 30
-_G.aboveDist = 2
+_G.mob = "GenericSlayer"
+_G.speed = 40
 
---// Detectar estilo de ataque
-local style = ""
-if getrenv()._G.PlayerData and getrenv()._G.PlayerData.Race == "Demon Slayer" then
-	style = "Katana"
-else
-	style = "Combat"
-end
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
 
---// Função noclip confiável
-RunService.RenderStepped:Connect(function()
-	if _G.noclip and lp.Character then
-		for _, part in pairs(lp.Character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.CanCollide = false
-			end
-		end
+-- cria gui flutuante
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 100)
+Frame.Position = UDim2.new(0.5, -100, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BackgroundTransparency = 0.2
+Frame.Active = true
+Frame.Draggable = true
+Frame.BorderSizePixel = 0
+Frame.Visible = true
+
+local UICorner = Instance.new("UICorner", Frame)
+UICorner.CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "Sui AutoFarm"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(0.8, 0, 0, 30)
+Button.Position = UDim2.new(0.1, 0, 0.5, 0)
+Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Button.Text = "Ativar"
+Button.TextColor3 = Color3.fromRGB(255,255,255)
+Button.Font = Enum.Font.GothamBold
+Button.TextSize = 14
+Instance.new("UICorner", Button)
+
+Button.MouseButton1Click:Connect(function()
+	_G.autofarm = not _G.autofarm
+	Button.Text = _G.autofarm and "Desativar" or "Ativar"
+	Button.BackgroundColor3 = _G.autofarm and Color3.fromRGB(0,170,0) or Color3.fromRGB(40,40,40)
+end)
+
+-- Noclip
+RunService.Stepped:Connect(function()
+	if _G.noclip and lp.Character and lp.Character:FindFirstChild("Humanoid") then
+		lp.Character.Humanoid:ChangeState(11)
 	end
 end)
 
---// Pegar mob mais próximo
-local function getClosestMob()
-	local closest, dist = nil, math.huge
-	for _, v in pairs(ws:GetChildren()) do
-		if v:IsA("Model") and v.Name == _G.mobName and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Health") and v.Health.Value > 0 then
-			local mag = (lp.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).Magnitude
-			if mag < dist then
-				closest, dist = v, mag
-			end
-		end
-	end
-	return closest, dist
-end
+-- Define estilo de ataque
+local style = (getrenv()._G.PlayerData and getrenv()._G.PlayerData.Race == "Demon Slayer") and "Katana" or "Combat"
 
---// Loop principal do autofarm
-coroutine.wrap(function()
-	while task.wait(0.1) do
-		if _G.autofarm and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-			local mob, distance = getClosestMob()
-			if mob then
-				local mobHRP = mob:FindFirstChild("HumanoidRootPart")
-				if mobHRP then
-					local targetPos = mobHRP.Position + Vector3.new(0, _G.aboveDist, 0)
-					
-					-- Teleporta caso esteja longe
-					if distance > _G.distCheck then
-						lp.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 30, 0))
-					end
-					
-					-- Ajusta posição com tween (suavemente desce)
-					local tween = TweenService:Create(
-						lp.Character.HumanoidRootPart,
-						TweenInfo.new(0.2, Enum.EasingStyle.Linear),
-						{CFrame = CFrame.new(targetPos, mobHRP.Position - Vector3.new(0, 5, 0))}
-					)
-					tween:Play()
-					
-					-- Ataque
-					task.wait(0.2)
-					if mob:FindFirstChild("Block") then
-						ReplicatedStorage.Remotes.Async:FireServer(style, "Heavy")
-					else
-						ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
-					end
+local function getClosestMob()
+	local target = nil
+	local shortest = math.huge
+	for _,v in ipairs(workspace:GetChildren()) do
+		if v:IsA("Model") and v.Name == _G.mob and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Health") then
+			if v.Health.Value > 0 then
+				local mag = (v.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude
+				if mag < shortest then
+					shortest = mag
+					target = v
 				end
 			end
 		end
 	end
-end)()
+	return target
+end
 
---// GUI flutuante simples
-local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
-ScreenGui.ResetOnSpawn = false
-
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 180, 0, 60)
-Frame.Position = UDim2.new(0, 20, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
-Frame.BorderSizePixel = 0
-Frame.BackgroundTransparency = 0.1
-
-local Toggle = Instance.new("TextButton", Frame)
-Toggle.Size = UDim2.new(1, -20, 1, -20)
-Toggle.Position = UDim2.new(0, 10, 0, 10)
-Toggle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Toggle.TextColor3 = Color3.new(1, 1, 1)
-Toggle.Text = "Ativar Autofarm"
-Toggle.Font = Enum.Font.Gotham
-Toggle.TextSize = 16
-Toggle.BorderSizePixel = 0
-
-Toggle.MouseButton1Click:Connect(function()
-	_G.autofarm = not _G.autofarm
-	Toggle.Text = _G.autofarm and "Desativar Autofarm" or "Ativar Autofarm"
-	Toggle.BackgroundColor3 = _G.autofarm and Color3.fromRGB(0, 170, 70) or Color3.fromRGB(50, 50, 50)
+task.spawn(function()
+	while task.wait() do
+		if _G.autofarm and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+			local mob = getClosestMob()
+			if mob then
+				local dist = (mob.HumanoidRootPart.Position - lp.Character.HumanoidRootPart.Position).Magnitude
+				
+				-- teleporta se tiver longe
+				if dist > 30 then
+					lp.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)
+					task.wait(0.2)
+				end
+				
+				-- ataca enquanto vivo
+				while _G.autofarm and mob and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Health") and mob.Health.Value > 0 do
+					local followPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0) * CFrame.Angles(math.rad(90), 0, 0)
+					lp.Character.HumanoidRootPart.CFrame = followPos
+					
+					if not mob:FindFirstChild("Block") and not mob:FindFirstChild("Ragdoll") then
+						ReplicatedStorage.Remotes.Async:FireServer(style, "Server")
+					elseif mob:FindFirstChild("Block") then
+						ReplicatedStorage.Remotes.Async:FireServer(style, "Heavy")
+					end
+					task.wait(0.45)
+				end
+				
+				-- executa após morrer
+				if mob and mob:FindFirstChild("Down") and not mob:FindFirstChild("Executed") then
+					local tries = 0
+					repeat
+						lp.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+						task.wait(0.1)
+						VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.B, false, game)
+						task.wait(0.4)
+						VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.B, false, game)
+						tries += 1
+					until mob:FindFirstChild("Executed") or tries >= 10
+				end
+			end
+		end
+	end
 end)
