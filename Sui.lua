@@ -73,8 +73,8 @@ task.spawn(function()
 					hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 15, 0)
 				end
 				
-				-- Posiciona deitado, 2 studs acima
-				local aboveCF = mobHRP.CFrame * CFrame.new(0, 2, 0) * CFrame.Angles(math.rad(90), 0, 0)
+				-- Posiciona deitado, 4 studs acima
+				local aboveCF = mobHRP.CFrame * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 				hrp.Anchored = true
 				hrp.CFrame = aboveCF
 				
