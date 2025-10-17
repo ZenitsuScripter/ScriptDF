@@ -13,7 +13,7 @@ local ScreenGui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
 ScreenGui.Name = "AutoFarmGUI"
 
 local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 180, 0, 60)
+Frame.Size = UDim2.new(0, 200, 0, 70)
 Frame.Position = UDim2.new(0.05, 0, 0.05, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Frame.BorderSizePixel = 0
@@ -31,7 +31,7 @@ ToggleButton.Text = "Autofarm: OFF"
 local autofarm = false
 local targetMobName = "GenericSlayer"
 local style = getrenv()._G.PlayerData.Race == "Demon Slayer" and "Katana" or "Combat"
-local distFromMob = 4
+local distFromMob = 6 -- altura acima do mob
 
 -- Auto-equip Katana se for Slayer
 if style == "Katana" then
@@ -59,28 +59,20 @@ local function getClosestMob()
     return closest
 end
 
--- Função de movimentação suave
+-- Função de seguir mob suavemente
 local function followMob(mob)
     local hrp = lp.Character.HumanoidRootPart
     local mobPos = mob.HumanoidRootPart.Position
     local targetPos = mobPos + Vector3.new(0, distFromMob, 0)
-    
-    local dist = (hrp.Position - mobPos).Magnitude
-    if dist > 30 then
-        -- Teleporta se muito longe
-        hrp.CFrame = CFrame.new(targetPos)
-        wait(0.1)
-    else
-        -- Move suavemente
-        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
-        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos, mobPos) * CFrame.Angles(math.rad(-90),0,0)})
-        tween:Play()
-    end
+
+    -- Cria Tween suave para seguir
+    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(hrp, tweenInfo, {CFrame = CFrame.new(targetPos, mobPos) * CFrame.Angles(math.rad(-90), 0, 0)})
+    tween:Play()
 end
 
 -- Função de ataque
 local function attackMob(mob)
-    local hrp = lp.Character.HumanoidRootPart
     if mob:FindFirstChild("Block") then
         if lp.Stamina.Value >= 20 then
             rs.Remotes.Async:FireServer(style, "Heavy")
