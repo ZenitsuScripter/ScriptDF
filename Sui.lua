@@ -1,63 +1,116 @@
-local player = game.Players.LocalPlayer
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.ResetOnSpawn = false
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0,360,0,56)
-frame.Position = UDim2.new(0.5, -180, 0, 10)
-frame.BackgroundTransparency = 0.25
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local raidBtn = Instance.new("TextButton", frame)
-raidBtn.Size = UDim2.new(0,120,0,48)
-raidBtn.Position = UDim2.new(0,10,0,4)
-raidBtn.Text = "TP Raid"
+-- Variables
+local AutoFarmActive = false
+local followingSlayer = nil
+local connection = nil
+local executing = false
 
-local coordsBtn = Instance.new("TextButton", frame)
-coordsBtn.Size = UDim2.new(0,120,0,48)
-coordsBtn.Position = UDim2.new(0,140,0,4)
-coordsBtn.Text = "TP NPC Raid"
-
-local nameBox = Instance.new("TextBox", frame)
-nameBox.Size = UDim2.new(0,80,0,28)
-nameBox.Position = UDim2.new(0,270,0,6)
-nameBox.PlaceholderText = "player"
-nameBox.ClearTextOnFocus = false
-
-local tpSquare = Instance.new("TextButton", frame)
-tpSquare.Size = UDim2.new(0,28,0,28)
-tpSquare.Position = UDim2.new(0,352,0,6)
-tpSquare.Text = "TP"
-
-raidBtn.MouseButton1Click:Connect(function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = CFrame.new(7084.1,1752.3,1385.2) end
-end)
-
-coordsBtn.MouseButton1Click:Connect(function()
-    local char = player.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = CFrame.new(-2379.6,1179.4,-1425.4) end
-end)
-
-local function findPlayerByPartial(text)
-    if text=="" then return nil end
-    text = string.lower(text)
-    for _,p in pairs(game.Players:GetPlayers()) do
-        if string.find(string.lower(p.Name), text, 1, true) then return p end
-    end
-    return nil
+-- Helper functions
+local function getRoot(model)
+    return model:FindFirstChild("HumanoidRootPart") 
+        or model:FindFirstChild("Torso") 
+        or model:FindFirstChild("UpperTorso")
 end
 
-local function tpToPlayerByText()
-    local txt = nameBox.Text or ""
-    local target = findPlayerByPartial(txt)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+local function getHealth(model)
+    return model:FindFirstChild("Health")
+end
+
+local function pickRandomSlayer()
+    local slayers = {}
+    for _, npc in ipairs(workspace:GetChildren()) do
+        if npc.Name == "RengokuRaid" and npc:IsA("Model") then
+            local root = getRoot(npc)
+            local health = getHealth(npc)
+            if root and health and health.Value > 0 then
+                table.insert(slayers, npc)
+            end
+        end
+    end
+    if #slayers == 0 then return nil end
+    return slayers[math.random(1, #slayers)]
+end
+
+local function attackSlayer(npc)
+    if executing then return end
+    local attackRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Async")
+    if npc:FindFirstChild("Block") then
+        attackRemote:FireServer("Katana","Heavy")
+    else
+        attackRemote:FireServer("Katana","Server")
     end
 end
 
-tpSquare.MouseButton1Click:Connect(tpToPlayerByText)
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AutoFarmGUI"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-nameBox.FocusLost:Connect(function(enter)
-    if enter then tpToPlayerByText() end
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0,200,0,70)
+Frame.Position = UDim2.new(0.05,0,0.05,0)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(1,-10,1,-10)
+ToggleButton.Position = UDim2.new(0,5,0,5)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.Text = "Autofarm: OFF"
+ToggleButton.Parent = Frame
+
+-- Toggle functionality
+ToggleButton.MouseButton1Click:Connect(function()
+    AutoFarmActive = not AutoFarmActive
+    ToggleButton.Text = "Autofarm: " .. (AutoFarmActive and "ON" or "OFF")
+    
+    if AutoFarmActive then
+        -- Start autofarm loop
+        if connection then connection:Disconnect() end
+        connection = RunService.RenderStepped:Connect(function()
+            if not AutoFarmActive then return end
+            local char = LocalPlayer.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hrp = char.HumanoidRootPart
+
+            if not followingSlayer then
+                followingSlayer = pickRandomSlayer()
+                if followingSlayer then
+                    print("Now following", followingSlayer.Name)
+                else
+                    return
+                end
+            end
+
+            local root = getRoot(followingSlayer)
+            local health = getHealth(followingSlayer)
+            if not root or not health then return end
+
+            -- Fica 6 studs acima olhando pra baixo
+            hrp.CFrame = CFrame.new(root.Position + Vector3.new(0,6,0), root.Position) * CFrame.Angles(math.rad(-90),0,0)
+
+            if health.Value > 0 then
+                attackSlayer(followingSlayer)
+            else
+                followingSlayer = nil
+            end
+        end)
+    else
+        -- Stop autofarm loop
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+        followingSlayer = nil
+        executing = false
+    end
 end)
