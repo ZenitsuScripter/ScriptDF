@@ -1,7 +1,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.31",
+    Title = "Sui Hub v1.35",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -11,33 +11,9 @@ local Window = Fluent:CreateWindow({
     SaveConfig = false
 })
 
--- BOTÃO "K" PARA MOBILE
-local ButtonScreen = Instance.new("ScreenGui")
-local OpenButton = Instance.new("TextButton")
-
-ButtonScreen.Name = "HubButton"
-ButtonScreen.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ButtonScreen.DisplayOrder = 999
-
-OpenButton.Text = "K"
-OpenButton.Size = UDim2.new(0.06, 0, 0.08, 0)
-OpenButton.Position = UDim2.new(0.02, 0, 0.98, 0)
-OpenButton.AnchorPoint = Vector2.new(0, 1)
-OpenButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-OpenButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.Font = Enum.Font.SourceSans
-OpenButton.TextScaled = true
-OpenButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-OpenButton.TextWrapped = true
-OpenButton.Parent = ButtonScreen
-
-OpenButton.MouseButton1Click:Connect(function()
-    Window:Toggle() -- abre/fecha o hub corretamente no mobile
-end)
-
--- ====================
+-- =============
 -- ADICIONA ABAS
--- ====================
+-- =============
 local Tabs = {
     Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
     PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
@@ -116,8 +92,9 @@ Tabs.PlayerTeleport:AddButton({
 })
 
 -- ===========
--- TREINADORES / RESPIRAÇÕES
+-- TREINADORES
 -- ===========
+
 local BreathLocations = {
     ["Água"] = CFrame.new(-926.5, 849.2, -989.1),
     ["Rocha"] = CFrame.new(-1707.1, 1045.5, -1371.2),
