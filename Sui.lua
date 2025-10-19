@@ -1,302 +1,203 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- LocalScript: Botão SH sofisticado (não cria duplicado)
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.35",
-    SubTitle = "by Suiryuu",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(500, 350),
-    Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.K,
-    SaveConfig = false
-})
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
--- =============
--- ADICIONA ABAS
--- =============
-local Tabs = {
-    Raid = Window:AddTab({ Title = "Raid", Icon = "star" }),
-    PlayerTeleport = Window:AddTab({ Title = "Teleport", Icon = "eye" }),
-    AutoFarm = Window:AddTab({ Title = "Auto Farm", Icon = "swords" }),
-    Discord = Window:AddTab({ Title = "Discord", Icon = "server" })
+-- Se já existe, não faz nada
+if playerGui:FindFirstChild("SuiPremiumButton") then return end
+
+-- ===== CONFIGURAÇÃO =====
+local BUTTON_TEXT = "SH"
+local SIMULATED_KEY = Enum.KeyCode.K
+local BUTTON_SIZE = UDim2.new(0, 160, 0, 56)
+local START_POS = UDim2.new(0.08, 0, 0.40, 0)
+local FLOAT_DISTANCE = 8
+local FLOAT_TIME = 2.6
+-- =========================
+
+-- ScreenGui container
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SuiPremiumButton"
+screenGui.ResetOnSpawn = false
+screenGui.DisplayOrder = 999
+screenGui.Parent = playerGui
+
+-- Sombra (leve)
+local shadow = Instance.new("Frame")
+shadow.Name = "Shadow"
+shadow.BackgroundTransparency = 0.85
+shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+shadow.Size = BUTTON_SIZE + UDim2.new(0, 8, 0, 8)
+shadow.Position = START_POS + UDim2.new(0, 4, 0, 4)
+shadow.AnchorPoint = Vector2.new(0, 0.5)
+shadow.BorderSizePixel = 0
+shadow.Parent = screenGui
+local shCorner = Instance.new("UICorner", shadow)
+shCorner.CornerRadius = UDim.new(1, 0)
+
+-- Botão principal
+local button = Instance.new("TextButton")
+button.Name = BUTTON_TEXT
+button.AnchorPoint = Vector2.new(0, 0.5)
+button.BackgroundTransparency = 0
+button.Size = BUTTON_SIZE
+button.Position = START_POS
+button.Parent = screenGui
+button.Font = Enum.Font.Roboto
+button.Text = "   " .. BUTTON_TEXT
+button.TextScaled = true
+button.TextWrapped = false
+button.AutoButtonColor = false
+button.TextColor3 = Color3.fromRGB(245,245,245)
+button.TextStrokeTransparency = 0.85
+
+-- Cantos arredondados
+local corner = Instance.new("UICorner", button)
+corner.CornerRadius = UDim.new(1, 0)
+
+-- Gradiente elegante
+local grad = Instance.new("UIGradient", button)
+grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(28,28,30)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(45,45,48)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20,20,22))
 }
+grad.Rotation = 90
 
-Window:SelectTab(1)
+-- Contorno delicado
+local stroke = Instance.new("UIStroke", button)
+stroke.Thickness = 1
+stroke.Transparency = 0.45
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
--- ===============
--- BOTÕES ABA RAID
--- ===============
-Tabs.Raid:AddButton({
-    Title = "TP Raid",
-    Description = "Teleporte para Raid",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(7084.1, 1752.3, 1385.2)
+-- Faixa lateral (accent)
+local accent = Instance.new("Frame")
+accent.Name = "Accent"
+accent.Size = UDim2.new(0, 10, 1, 0)
+accent.Position = UDim2.new(0, 0, 0, 0)
+accent.BackgroundColor3 = Color3.fromRGB(95,205,255)
+accent.Parent = button
+local accentCorner = Instance.new("UICorner", accent)
+accentCorner.CornerRadius = UDim.new(1, 0)
+
+-- Ícone circular à esquerda
+local icon = Instance.new("Frame")
+icon.Name = "Icon"
+icon.Size = UDim2.new(0, 40, 0, 40)
+icon.Position = UDim2.new(0, 14, 0.5, -20)
+icon.AnchorPoint = Vector2.new(0, 0)
+icon.BackgroundColor3 = Color3.fromRGB(18,18,20)
+icon.Parent = button
+local iconCorner = Instance.new("UICorner", icon)
+iconCorner.CornerRadius = UDim.new(1, 0)
+
+local iconDot = Instance.new("Frame")
+iconDot.Size = UDim2.new(0, 12, 0, 12)
+iconDot.Position = UDim2.new(0.5, -6, 0.5, -6)
+iconDot.AnchorPoint = Vector2.new(0.5, 0.5)
+iconDot.BackgroundColor3 = Color3.fromRGB(95,205,255)
+iconDot.Parent = icon
+local iconDotCorner = Instance.new("UICorner", iconDot)
+iconDotCorner.CornerRadius = UDim.new(1, 0)
+
+-- Escala de UI
+local uiScale = Instance.new("UIScale", screenGui)
+uiScale.Scale = 1
+
+-- ZIndex: botão acima da sombra
+shadow.ZIndex = 0
+button.ZIndex = 1
+accent.ZIndex = 2
+icon.ZIndex = 2
+
+-- ===== Dragging (arrastar) =====
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+local function isPointOverGui(point, guiObject)
+    local absPos = guiObject.AbsolutePosition
+    local absSize = guiObject.AbsoluteSize
+    return point.X >= absPos.X and point.X <= absPos.X + absSize.X
+       and point.Y >= absPos.Y and point.Y <= absPos.Y + absSize.Y
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mousePos = input.Position
+        if isPointOverGui(mousePos, button) then
+            dragging = true
+            dragStart = mousePos
+            startPos = button.Position
         end
     end
-})
-
-Tabs.Raid:AddButton({
-    Title = "TP NPC Raid",
-    Description = "Teleporte para NPC Raid",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(-2379.6, 1179.4, -1425.4)
-        end
-    end
-})
-
--- ====================
--- ABA TELEPORT PLAYERS
--- ====================
-local selectedPlayer = nil
-local selectedBreath = nil
-
-local PlayersDropdown = Tabs.PlayerTeleport:AddDropdown("PlayersDropdown", {
-    Title = "Teleporte Player",
-    Description = "Selecione um Player",
-    Values = {},
-    Multi = false,
-    Default = "Selecionar"
-})
-
-PlayersDropdown:OnChanged(function(value)
-    selectedPlayer = value
 end)
 
-local function updatePlayerList()
-    local players = game:GetService("Players"):GetPlayers()
-    local names = {}
-    for _, p in ipairs(players) do
-        table.insert(names, p.Name)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        local newX = startPos.X.Offset + delta.X
+        local newY = startPos.Y.Offset + delta.Y
+        local screenW, screenH = workspace.CurrentCamera.ViewportSize.X, workspace.CurrentCamera.ViewportSize.Y
+        newX = math.clamp(newX, 0, screenW - button.AbsoluteSize.X)
+        newY = math.clamp(newY, 0, screenH - button.AbsoluteSize.Y)
+        button.Position = UDim2.new(0, newX, 0, newY)
+        shadow.Position = UDim2.new(0, newX + 4, 0, newY + 4)
     end
-    PlayersDropdown:SetValues(names)
-end
-
-game.Players.PlayerAdded:Connect(updatePlayerList)
-game.Players.PlayerRemoving:Connect(updatePlayerList)
-updatePlayerList()
-
-Tabs.PlayerTeleport:AddButton({
-    Title = "Teleporte para o Player",
-    Description = "Teleporte para o Player Selecionado",
-    Callback = function()
-        if not selectedPlayer then return end
-        local target = game.Players:FindFirstChild(selectedPlayer)
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
-        end
-    end
-})
-
--- ===========
--- TREINADORES
--- ===========
-
-local BreathLocations = {
-    ["Água"] = CFrame.new(-926.5, 849.2, -989.1),
-    ["Rocha"] = CFrame.new(-1707.1, 1045.5, -1371.2),
-    ["Besta"] = CFrame.new(-3104.5, 783.6, -6599.5),
-    ["Chamas"] = CFrame.new(1492.0, 1240.0, -353.7),
-    ["Amor"] = CFrame.new(1188.3, 1082.1, -1113.8),
-    ["Cobra"] = CFrame.new(989.9, 1075.8, -1136.3),
-    ["Som"] = CFrame.new(-1258.8, 873.0, -6438.8),
-    ["Flor"] = CFrame.new(-1315.6, 878.4, -6236.8),
-    ["Inseto"] = CFrame.new(-1642.8, 912.3, -6488.4),
-    ["Névoa"] = CFrame.new(3235.8, 784.7, -4046.5),
-    ["Vento"] = CFrame.new(-3288.6, 712.6, -1255.1),
-    ["Trovão"] = CFrame.new(-699.1, 700.0, 538.6),
-    ["Sol"] = CFrame.new(389.2, 821.8, -416.5),
-    ["Lua"] = CFrame.new(1833.4, 1121.7, -5949.5)
-}
-
-local RespDropdown = Tabs.PlayerTeleport:AddDropdown("RespDropdown", {
-    Title = "Respirações",
-    Description = "Selecione uma respiração",
-    Values = {"Água", "Rocha", "Besta", "Chamas", "Amor", "Cobra", "Som", "Flor", "Inseto", "Névoa", "Vento", "Trovão", "Sol", "Lua"},
-    Multi = false,
-    Default = "Selecionar"
-})
-
-RespDropdown:OnChanged(function(value)
-    selectedBreath = value
 end)
 
-Tabs.PlayerTeleport:AddButton({
-    Title = "Teleporte para a Respiração",
-    Description = "Teleporte para a Respiração Selecionada",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local char = player.Character or player.CharacterAdded:Wait()
-        local hrp = char:WaitForChild("HumanoidRootPart")
-
-        if selectedBreath and BreathLocations[selectedBreath] then
-            hrp.CFrame = BreathLocations[selectedBreath]
-        end
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
-})
+end)
 
--- ================
--- AUTO TP TRINKETS
--- ================
-local TrinketPriority = {
-    ["Perfect Crystal"] = 1,
-    ["Green Jewel"] = 2,
-    ["Red Jewel"] = 3,
-    ["Gold Crown"] = 4,
-    ["Ancient Coin"] = 5,
-    ["Gold Jar"] = 6,
-    ["Golden Ring"] = 7,
-    ["Gold Goblet"] = 8,
-    ["Silver Jar"] = 9,
-    ["Silver Ring"] = 10,
-    ["Silver Goblet"] = 11,
-    ["Bronze Jar"] = 12,
-    ["Copper Goblet"] = 13,
-    ["Rusty Goblet"] = 14
-}
-
-local player = game.Players.LocalPlayer
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local ativo = false
-local checkpoint = nil
-local char = player.Character or player.CharacterAdded:Wait()
-local trinketsAtivos = {}
-
-local function getPosition(obj)
-    if obj:IsA("BasePart") then return obj.Position end
-    if obj:IsA("Model") then
-        if obj.PrimaryPart then return obj.PrimaryPart.Position end
-        for _, p in pairs(obj:GetDescendants()) do
-            if p:IsA("BasePart") then return p.Position end
-        end
+-- ===== Floating animation =====
+spawn(function()
+    local direction = 1
+    local basePos = button.Position
+    local baseShadowPos = shadow.Position
+    while true do
+        local targetY = basePos.Y.Offset + (FLOAT_DISTANCE * direction)
+        local tweenInfo = TweenInfo.new(FLOAT_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+        local tween = TweenService:Create(button, tweenInfo, {Position = UDim2.new(basePos.X.Scale, basePos.X.Offset, 0, targetY)})
+        local shadowTween = TweenService:Create(shadow, tweenInfo, {Position = UDim2.new(baseShadowPos.X.Scale, baseShadowPos.X.Offset, 0, baseShadowPos.Y.Offset + (FLOAT_DISTANCE * direction) + 4)})
+        tween:Play()
+        shadowTween:Play()
+        tween.Completed:Wait()
+        direction = -direction
     end
-    return nil
-end
+end)
 
-local function interact(item)
-    for _, prompt in ipairs(item:GetDescendants()) do
-        if prompt:IsA("ProximityPrompt") then
-            pcall(function() fireproximityprompt(prompt) end)
-        end
+-- ===== Clique do botão =====
+local function triggerAction()
+    if type(keypress) == "function" and type(keyrelease) == "function" then
+        pcall(function()
+            keypress(SIMULATED_KEY)
+            wait(0.06)
+            keyrelease(SIMULATED_KEY)
+        end)
     end
 end
 
-local function addTrinket(item)
-    if TrinketPriority[item.Name] then
-        table.insert(trinketsAtivos, item)
+button.MouseButton1Click:Connect(function()
+    local pinfo = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local t1 = TweenService:Create(accent, pinfo, {Size = UDim2.new(0, 14, 1, 0)})
+    local t2 = TweenService:Create(accent, pinfo, {Size = UDim2.new(0, 10, 1, 0)})
+    t1:Play()
+    t1.Completed:Wait()
+    t2:Play()
+    triggerAction()
+end)
+
+-- ===== Atalho de teclado =====
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == SIMULATED_KEY then
+        triggerAction()
     end
-end
-
-local function removeTrinket(item)
-    for i,v in ipairs(trinketsAtivos) do
-        if v == item then
-            table.remove(trinketsAtivos, i)
-            break
-        end
-    end
-end
-
-local function processarTrinkets()
-    while ativo do
-        if #trinketsAtivos > 0 then
-            table.sort(trinketsAtivos, function(a,b)
-                return TrinketPriority[a.Name] < TrinketPriority[b.Name]
-            end)
-
-            local alvo = trinketsAtivos[1]
-            if alvo and alvo.Parent then
-                local pos = getPosition(alvo)
-                if pos and char and char:FindFirstChild("HumanoidRootPart") then
-                    char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
-                    task.wait(0.3)
-                    interact(alvo)
-                    removeTrinket(alvo)
-                    task.wait(0.5)
-                else
-                    removeTrinket(alvo)
-                end
-            else
-                removeTrinket(alvo)
-            end
-        else
-            if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
-            end
-            task.wait(0.3)
-        end
-        task.wait(0.1)
-    end
-end
-
-local function monitor(container)
-    for _, obj in pairs(container:GetChildren()) do
-        addTrinket(obj)
-    end
-    container.ChildAdded:Connect(function(child)
-        if ativo then addTrinket(child) end
-    end)
-    container.ChildRemoved:Connect(function(child)
-        removeTrinket(child)
-    end)
-end
-
-local function iniciarMonitoramento()
-    monitor(workspace)
-    monitor(replicatedStorage)
-end
-
-local function ativarAutoTP()
-    char = player.Character or player.CharacterAdded:Wait()
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    if not ativo then
-        checkpoint = char.HumanoidRootPart.Position
-        ativo = true
-        iniciarMonitoramento()
-        task.spawn(processarTrinkets)
-    end
-end
-
-local function desativarAutoTP()
-    ativo = false
-    if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
-    end
-    trinketsAtivos = {}
-end
-
-Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
-    Title = "Auto Trinkets",
-    Description = "Colete todos os trinkets automaticamente",
-    Default = false,
-    Callback = function(state)
-        if state then
-            ativarAutoTP()
-        else
-            desativarAutoTP()
-        end
-    end
-})
-
--- ===========
--- ABA DISCORD
--- ===========
-Tabs.Discord:AddParagraph({
-    Title = "Servidor Oficial do Sui Hub",
-    Content = "Entre na nossa comunidade para receber atualizações e suporte!"
-})
-
-Tabs.Discord:AddButton({
-    Title = "Copiar Link do Discord",
-    Description = "Copia o link de convite para a área de transferência",
-    Callback = function()
-        setclipboard("https://discord.gg/MG7EPpfWwu")
-        Fluent:Notify({
-            Title = "Link Copiado!",
-            Content = "O convite do Discord foi copiado para a área de transferência",
-            Duration = 5
-        })
-    end
-})
+end)
