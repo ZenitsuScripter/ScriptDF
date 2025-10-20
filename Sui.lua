@@ -1,36 +1,31 @@
--- Verifica se já existe o GUI
+-- Evita criar múltiplos GUIs
 if game.Players.LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("ButtonScreen") then
     return
 end
 
+local Player = game.Players.LocalPlayer
 local ButtonScreen = Instance.new("ScreenGui")
 local Key = Instance.new("TextButton")
-local UICorner = Instance.new("UICorner")
 local UIStroke = Instance.new("UIStroke")
-local RunService = game:GetService("RunService")
 
 ButtonScreen.Name = "ButtonScreen"
-ButtonScreen.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ButtonScreen.Parent = Player:WaitForChild("PlayerGui")
 ButtonScreen.DisplayOrder = 999
 
 -- Configuração do botão
 Key.Name = "Key"
 Key.Parent = ButtonScreen
-Key.BackgroundColor3 = Color3.fromRGB(40, 40, 40) -- cor moderna escura
+Key.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Key.BorderSizePixel = 0
 Key.AnchorPoint = Vector2.new(0,0)
-Key.Position = UDim2.new(0.02, 0, 0.02, 0) -- canto superior esquerdo com afastamento
-Key.Size = UDim2.new(0.08, 0, 0.08, 0)
+Key.Position = UDim2.new(0.02, 0, 0.02, 0)
+Key.Size = UDim2.new(0.08, 0, 0.08, 0) -- quadrado
 Key.Font = Enum.Font.GothamBold
 Key.Text = "SH"
 Key.TextColor3 = Color3.fromRGB(255, 255, 255)
 Key.TextScaled = true
 Key.TextWrapped = true
 Key.AutoButtonColor = true
-
--- Cantos arredondados
-UICorner.CornerRadius = UDim.new(0.2, 0)
-UICorner.Parent = Key
 
 -- Contorno suave
 UIStroke.Thickness = 2
@@ -56,7 +51,7 @@ local function LinkKey(Button)
             wait(0.05)
             keyrelease(keey)
 
-            wait(0.5) -- cooldown
+            wait(0.5)
             canClick = true
         end)
     else
@@ -66,12 +61,32 @@ end
 
 LinkKey(Key)
 
--- Efeito flutuante vertical suave
-local floatAmount = 8 -- altura máxima do movimento
-local floatSpeed = 2 -- velocidade do movimento
-local initialY = Key.Position.Y.Scale
+-- Tornar arrastável
+local dragging = false
+local dragInput, mousePos, framePos
 
-RunService.RenderStepped:Connect(function()
-    local offset = math.sin(tick() * floatSpeed) * floatAmount
-    Key.Position = UDim2.new(Key.Position.X.Scale, 0, initialY, offset)
+Key.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        framePos = Key.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+Key.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
+        Key.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+    end
 end)
