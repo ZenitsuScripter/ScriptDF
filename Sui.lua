@@ -11,7 +11,7 @@ end
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.35",
+    Title = "Sui Hub v1.4",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -174,8 +174,10 @@ local ativo = false
 local checkpoint = nil
 local char = player.Character or player.CharacterAdded:Wait()
 local trinketsAtivos = {}
+local monitored = false -- evita múltiplas conexões do monitor
 
 local function getPosition(obj)
+    if not obj then return nil end
     if obj:IsA("BasePart") then return obj.Position end
     if obj:IsA("Model") then
         if obj.PrimaryPart then return obj.PrimaryPart.Position end
@@ -187,6 +189,7 @@ local function getPosition(obj)
 end
 
 local function interact(item)
+    if not item then return end
     for _, prompt in ipairs(item:GetDescendants()) do
         if prompt:IsA("ProximityPrompt") then
             pcall(function() fireproximityprompt(prompt) end)
@@ -195,13 +198,18 @@ local function interact(item)
 end
 
 local function addTrinket(item)
+    if not item or not item.Name then return end
     if TrinketPriority[item.Name] then
+        -- Evita duplicatas
+        for _, v in ipairs(trinketsAtivos) do
+            if v == item then return end
+        end
         table.insert(trinketsAtivos, item)
     end
 end
 
 local function removeTrinket(item)
-    for i,v in ipairs(trinketsAtivos) do
+    for i, v in ipairs(trinketsAtivos) do
         if v == item then
             table.remove(trinketsAtivos, i)
             break
@@ -211,20 +219,29 @@ end
 
 local function processarTrinkets()
     while ativo do
+        -- se char não existir ou não tiver HRP, espera e continua (isso permite o respawn)
+        if not char or not char.Parent or not char:FindFirstChild("HumanoidRootPart") then
+            task.wait(0.3)
+            continue
+        end
+
         if #trinketsAtivos > 0 then
-            table.sort(trinketsAtivos, function(a,b)
-                return TrinketPriority[a.Name] < TrinketPriority[b.Name]
+            table.sort(trinketsAtivos, function(a, b)
+                local pa = TrinketPriority[a and a.Name or ""] or 999
+                local pb = TrinketPriority[b and b.Name or ""] or 999
+                return pa < pb
             end)
 
             local alvo = trinketsAtivos[1]
             if alvo and alvo.Parent then
                 local pos = getPosition(alvo)
                 if pos and char and char:FindFirstChild("HumanoidRootPart") then
-                    char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
-                    task.wait(0.3)
+                    -- teleporta perto do trinket (sobe 3 studs para evitar ficar preso no chão)
+                    char.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                    task.wait(0.25)
                     interact(alvo)
                     removeTrinket(alvo)
-                    task.wait(0.5)
+                    task.wait(0.4)
                 else
                     removeTrinket(alvo)
                 end
@@ -232,8 +249,11 @@ local function processarTrinkets()
                 removeTrinket(alvo)
             end
         else
+            -- nada pra coletar: volta pro checkpoint se existir e o char permitir
             if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
+                pcall(function()
+                    char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
+                end)
             end
             task.wait(0.3)
         end
@@ -242,6 +262,7 @@ local function processarTrinkets()
 end
 
 local function monitor(container)
+    if not container then return end
     for _, obj in pairs(container:GetChildren()) do
         addTrinket(obj)
     end
@@ -254,15 +275,22 @@ local function monitor(container)
 end
 
 local function iniciarMonitoramento()
+    if monitored then return end
+    monitored = true
+    -- monitora workspace e replicatedStorage (ou onde os trinkets realmente aparecem)
     monitor(workspace)
     monitor(replicatedStorage)
 end
 
 local function ativarAutoTP()
     char = player.Character or player.CharacterAdded:Wait()
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    -- espera HRP para evitar problemas imediatos
+    char:WaitForChild("HumanoidRootPart", 5)
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        -- se não conseguiu, tenta continuar; o processarTrinkets lida com ausência temporária
+    end
     if not ativo then
-        checkpoint = char.HumanoidRootPart.Position
+        checkpoint = char and char:FindFirstChild("HumanoidRootPart") and char.HumanoidRootPart.Position or checkpoint
         ativo = true
         iniciarMonitoramento()
         task.spawn(processarTrinkets)
@@ -272,11 +300,44 @@ end
 local function desativarAutoTP()
     ativo = false
     if checkpoint and char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(checkpoint)
+        pcall(function() char.HumanoidRootPart.CFrame = CFrame.new(checkpoint) end)
     end
     trinketsAtivos = {}
 end
 
+-- Atualiza 'char' quando o player respawna, mantendo o sistema ativo
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    -- pequena espera para o HRP existir
+    local hrp = char:WaitForChild("HumanoidRootPart", 10)
+    if hrp then
+        -- se o auto estiver ativo, atualiza checkpoint pro novo hrp (ou mantém o anterior se quiser)
+        if ativo then
+            -- coluna de decisão: manter checkpoint antigo ou atualizar pro novo? vamos manter o checkpoint salvo
+            -- mas teleporta o player de volta ao checkpoint para retomar coleta
+            if checkpoint then
+                pcall(function() char.HumanoidRootPart.CFrame = CFrame.new(checkpoint) end)
+            else
+                checkpoint = hrp.Position
+            end
+        end
+    end
+end)
+
+-- também opcional: se quiser limpar lista de trinkets quando o personagem for removido
+player.CharacterRemoving:Connect(function(oldChar)
+    -- não limpa trinketsAtivos aqui, pois queremos que o loop só ignore enquanto não houver char
+    -- mas poderíamos limpar referências inválidas para evitar vazamento de memória:
+    for i = #trinketsAtivos, 1, -1 do
+        local v = trinketsAtivos[i]
+        if not v or not v.Parent then
+            table.remove(trinketsAtivos, i)
+        end
+    end
+end)
+
+-- toggle no Fluent
+Tabs.AutoFarm:Remove("AutoTrinketToggle") -- garante que não duplique caso o toggle exista (opcional)
 Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
     Title = "Auto Trinkets",
     Description = "Colete todos os trinkets automaticamente",
