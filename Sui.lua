@@ -2,7 +2,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.4",
+    Title = "Sui Hub v1.35",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -324,7 +324,7 @@ Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
 })
 
 -- =====================
--- AUTO PICKUP AURA / TP
+-- AUTO PICKUP (AURA / TELEPORT)
 -- =====================
 local lp = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
@@ -335,19 +335,19 @@ local autoPickupType = "Aura"
 local autoPickupActive = false
 local pickupRange = 20
 
--- Função de coleta
 local function AutoPickupLoop()
     while autoPickupActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") do
         for _,v in pairs(ws:GetChildren()) do
             if v.Name == "DropItem" then
-                local dist = (v.Position - lp.Character.HumanoidRootPart.Position).Magnitude
-                if dist <= pickupRange then
-                    if autoPickupType == "Teleport" then
-                        -- Teleporta até o drop
-                        lp.Character.HumanoidRootPart.CFrame = CFrame.new(v.Position + Vector3.new(0,3,0))
+                local pos = (v:IsA("BasePart") and v.Position) or (v.PrimaryPart and v.PrimaryPart.Position)
+                if pos then
+                    local dist = (pos - lp.Character.HumanoidRootPart.Position).Magnitude
+                    if dist <= pickupRange then
+                        if autoPickupType == "Teleport" then
+                            lp.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+                        end
+                        pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", v) end)
                     end
-                    -- Interage
-                    rs.Remotes.Async:FireServer("Character", "Interaction", v)
                 end
             end
         end
@@ -355,10 +355,9 @@ local function AutoPickupLoop()
     end
 end
 
--- Dropdown para selecionar modo
 local PickupDropdown = Tabs.AutoFarm:AddDropdown("PickupMode", {
     Title = "Modo Pickup",
-    Description = "Selecione o modo de coleta dos Drops",
+    Description = "Selecionar",
     Values = {"Aura", "Teleport"},
     Multi = false,
     Default = "Selecionar"
@@ -368,7 +367,6 @@ PickupDropdown:OnChanged(function(value)
     autoPickupType = value
 end)
 
--- Toggle para ativar/desativar
 Tabs.AutoFarm:AddToggle("AutoPickupToggle", {
     Title = "Auto Pickup",
     Description = "Ativa o Auto Pickup selecionado",
