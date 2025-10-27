@@ -2,7 +2,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.45",
+    Title = "Sui Hub v1.5",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -331,41 +331,70 @@ local rs = game:GetService("ReplicatedStorage")
 local ws = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 
-local autoPickupType = "Selecionar" -- valor inicial
+local autoPickupType = "Selecionar"
 local autoPickupActive = false
 local pickupRange = 20
+local checkpoint = nil
+
+-- Função para pegar posição do objeto
+local function getPosition(obj)
+    if not obj then return nil end
+    if obj:IsA("BasePart") then return obj.Position end
+    if obj:IsA("Model") then
+        if obj.PrimaryPart then return obj.PrimaryPart.Position end
+        for _, p in pairs(obj:GetDescendants()) do
+            if p:IsA("BasePart") then return p.Position end
+        end
+    end
+    return nil
+end
 
 -- Loop do Auto Pickup
 local function AutoPickupLoop()
+    checkpoint = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and lp.Character.HumanoidRootPart.Position or nil
+
     while autoPickupActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") do
-        -- Não faz nada se estiver em "Selecionar"
-        if autoPickupType == "Selecionar" then
-            task.wait(0.3)
-        else
-            for _, v in pairs(ws:GetChildren()) do
-                if v.Name == "DropItem" then
-                    local pos = (v:IsA("BasePart") and v.Position) or (v.PrimaryPart and v.PrimaryPart.Position)
-                    if pos then
-                        local dist = (pos - lp.Character.HumanoidRootPart.Position).Magnitude
+        local hrp = lp.Character.HumanoidRootPart
+        local drops = {}
+
+        -- coleta todos os drops no mapa
+        for _, v in pairs(ws:GetChildren()) do
+            if v.Name == "DropItem" then
+                table.insert(drops, v)
+            end
+        end
+
+        if #drops > 0 then
+            for _, drop in ipairs(drops) do
+                local pos = getPosition(drop)
+                if pos then
+                    if autoPickupType == "Teleport" then
+                        local originalPos = hrp.CFrame
+                        hrp.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+                        pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", drop) end)
+                        hrp.CFrame = originalPos
+                        task.wait(0.2)
+                    else -- Aura
+                        local dist = (pos - hrp.Position).Magnitude
                         if dist <= pickupRange then
-                            if autoPickupType == "Teleport" then
-                                -- salva posição em tempo real
-                                local originalPos = lp.Character.HumanoidRootPart.CFrame
-                                -- teleporta para o drop
-                                lp.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
-                                -- interage
-                                pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", v) end)
-                                -- volta para a posição original
-                                lp.Character.HumanoidRootPart.CFrame = originalPos
-                            else -- Aura
-                                pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", v) end)
-                            end
+                            pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", drop) end)
                         end
                     end
                 end
             end
-            RunService.Heartbeat:Wait()
+        else
+            -- não há drops, mantém no checkpoint
+            if checkpoint then
+                pcall(function() hrp.CFrame = CFrame.new(checkpoint) end)
+            end
         end
+
+        task.wait(0.1)
+    end
+
+    -- quando desativar, volta pro checkpoint
+    if checkpoint and hrp then
+        pcall(function() hrp.CFrame = CFrame.new(checkpoint) end)
     end
 end
 
@@ -373,9 +402,9 @@ end
 local PickupDropdown = Tabs.AutoFarm:AddDropdown("PickupMode", {
     Title = "Modo Pickup",
     Description = "Selecionar",
-    Values = {"Aura", "Teleport"}, -- apenas opções reais
+    Values = {"Aura", "Teleport"},
     Multi = false,
-    Default = "Selecionar" -- default mostrado, mas não aparece na lista
+    Default = "Selecionar"
 })
 
 PickupDropdown:OnChanged(function(value)
