@@ -2,7 +2,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.5",
+    Title = "Sui Hub v1.51",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -330,73 +330,90 @@ local lp = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
 local ws = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
-local autoPickupType = "Selecionar"
+local autoPickupType = "Selecionar" -- valor inicial
 local autoPickupActive = false
 local pickupRange = 20
-local checkpoint = nil
+local teleportCheckpoint = nil -- só para Teleport
 
--- Função para pegar posição do objeto
-local function getPosition(obj)
-    if not obj then return nil end
-    if obj:IsA("BasePart") then return obj.Position end
-    if obj:IsA("Model") then
-        if obj.PrimaryPart then return obj.PrimaryPart.Position end
-        for _, p in pairs(obj:GetDescendants()) do
-            if p:IsA("BasePart") then return p.Position end
-        end
-    end
-    return nil
+-- Função para pegar drops
+local function collectDrop(drop)
+    pcall(function()
+        rs.Remotes.Async:FireServer("Character", "Interaction", drop)
+    end)
 end
 
 -- Loop do Auto Pickup
 local function AutoPickupLoop()
-    checkpoint = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and lp.Character.HumanoidRootPart.Position or nil
+    while autoPickupActive do
+        if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then
+            task.wait(0.5)
+        else
+            local hrp = lp.Character.HumanoidRootPart
 
-    while autoPickupActive and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") do
-        local hrp = lp.Character.HumanoidRootPart
-        local drops = {}
-
-        -- coleta todos os drops no mapa
-        for _, v in pairs(ws:GetChildren()) do
-            if v.Name == "DropItem" then
-                table.insert(drops, v)
-            end
-        end
-
-        if #drops > 0 then
-            for _, drop in ipairs(drops) do
-                local pos = getPosition(drop)
-                if pos then
-                    if autoPickupType == "Teleport" then
-                        local originalPos = hrp.CFrame
-                        hrp.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
-                        pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", drop) end)
-                        hrp.CFrame = originalPos
-                        task.wait(0.2)
-                    else -- Aura
-                        local dist = (pos - hrp.Position).Magnitude
-                        if dist <= pickupRange then
-                            pcall(function() rs.Remotes.Async:FireServer("Character", "Interaction", drop) end)
+            if autoPickupType == "Selecionar" then
+                task.wait(0.3)
+            else
+                local drops = {}
+                -- Pega todos os drops no mapa
+                for _, v in pairs(ws:GetChildren()) do
+                    if v.Name == "DropItem" then
+                        local pos = (v:IsA("BasePart") and v.Position) or (v.PrimaryPart and v.PrimaryPart.Position)
+                        if pos then
+                            table.insert(drops, {obj = v, pos = pos, dist = (pos - hrp.Position).Magnitude})
                         end
                     end
                 end
-            end
-        else
-            -- não há drops, mantém no checkpoint
-            if checkpoint then
-                pcall(function() hrp.CFrame = CFrame.new(checkpoint) end)
+
+                if #drops > 0 then
+                    -- Ordena por proximidade
+                    table.sort(drops, function(a, b)
+                        return a.dist < b.dist
+                    end)
+
+                    for _, dropData in ipairs(drops) do
+                        local drop = dropData.obj
+                        local pos = dropData.pos
+                        if drop and drop.Parent then
+                            if autoPickupType == "Teleport" then
+                                hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                                collectDrop(drop)
+                                task.wait(0.5) -- delay entre teleports
+                            else -- Aura
+                                if dropData.dist <= pickupRange then
+                                    collectDrop(drop)
+                                end
+                            end
+                        end
+                    end
+                else
+                    -- Sem drops: volta para checkpoint se Teleport
+                    if autoPickupType == "Teleport" and teleportCheckpoint then
+                        hrp.CFrame = CFrame.new(teleportCheckpoint)
+                    end
+                    task.wait(0.3)
+                end
             end
         end
-
-        task.wait(0.1)
+        RunService.Heartbeat:Wait()
     end
 
-    -- quando desativar, volta pro checkpoint
-    if checkpoint and hrp then
-        pcall(function() hrp.CFrame = CFrame.new(checkpoint) end)
+    -- Ao desativar, Teleport volta para checkpoint
+    if autoPickupType == "Teleport" and teleportCheckpoint and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = CFrame.new(teleportCheckpoint)
     end
 end
+
+-- Mantém loop ativo mesmo após respawn
+Players.LocalPlayer.CharacterAdded:Connect(function(char)
+    if autoPickupActive then
+        if autoPickupType == "Teleport" and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(teleportCheckpoint)
+        end
+        coroutine.wrap(AutoPickupLoop)()
+    end
+end)
 
 -- Dropdown do Auto Pickup
 local PickupDropdown = Tabs.AutoFarm:AddDropdown("PickupMode", {
@@ -419,6 +436,9 @@ Tabs.AutoFarm:AddToggle("AutoPickupToggle", {
     Callback = function(state)
         autoPickupActive = state
         if state then
+            if autoPickupType == "Teleport" and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+                teleportCheckpoint = lp.Character.HumanoidRootPart.Position
+            end
             coroutine.wrap(AutoPickupLoop)()
         end
     end
