@@ -2,7 +2,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.52",
+    Title = "Sui Hub v1.53",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -324,7 +324,7 @@ Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
 })
 
 -- =====================
--- AUTO PICKUP (AURA / TELEPORT) REFACTORED
+-- AUTO PICKUP (AURA / TELEPORT)
 -- =====================
 local lp = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
@@ -332,114 +332,95 @@ local ws = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
-local autoPickupType = "Selecionar" -- valor inicial
+local autoPickupType = "Selecionar"
 local autoPickupActive = false
 local pickupRange = 20
-local teleportCheckpoint = nil -- só para Teleport
-local monitoredDrops = {} -- tabela de drops ativos
+local teleportCheckpoint = nil
+local lastTeleportBack = 0
 
--- Função para coletar drops
 local function collectDrop(drop)
-    if drop and drop.Parent then
-        pcall(function()
-            rs.Remotes.Async:FireServer("Character", "Interaction", drop)
-        end)
-    end
-end
-
--- Função para adicionar drops à lista
-local function monitorContainer(container)
-    for _, obj in pairs(container:GetChildren()) do
-        if obj.Name == "DropItem" then
-            monitoredDrops[obj] = obj
-        end
-    end
-    container.ChildAdded:Connect(function(child)
-        if child.Name == "DropItem" then
-            monitoredDrops[child] = child
-        end
-    end)
-    container.ChildRemoved:Connect(function(child)
-        monitoredDrops[child] = nil
+    pcall(function()
+        rs.Remotes.Async:FireServer("Character", "Interaction", drop)
     end)
 end
 
--- Inicializa monitoramento
-monitorContainer(ws)
-
--- Loop do Auto Pickup
 local function AutoPickupLoop()
     while autoPickupActive do
-        if not lp.Character or not lp.Character:FindFirstChild("HumanoidRootPart") then
-            task.wait(0.5)
-        else
-            local hrp = lp.Character.HumanoidRootPart
+        local char = lp.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-            if autoPickupType == "Selecionar" then
-                task.wait(0.3)
-            else
-                local drops = {}
-                for dropObj, drop in pairs(monitoredDrops) do
-                    if drop and drop.Parent then
-                        local pos = (drop:IsA("BasePart") and drop.Position) or (drop.PrimaryPart and drop.PrimaryPart.Position)
-                        if pos then
-                            table.insert(drops, {obj = drop, pos = pos, dist = (pos - hrp.Position).Magnitude})
-                        end
-                    end
-                end
+        if not hrp then
+            task.wait(0.3)
+            continue
+        end
 
-                if #drops > 0 then
-                    table.sort(drops, function(a, b)
-                        return a.dist < b.dist
-                    end)
+        if autoPickupType == "Selecionar" then
+            task.wait(0.3)
+            continue
+        end
 
-                    for _, dropData in ipairs(drops) do
-                        local drop = dropData.obj
-                        local pos = dropData.pos
-                        if drop and drop.Parent then
-                            if autoPickupType == "Teleport" then
-                                hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
-                                collectDrop(drop)
-                                task.wait(0.5)
-                            else -- Aura
-                                if dropData.dist <= pickupRange then
-                                    collectDrop(drop)
-                                end
-                            end
-                        end
-                    end
-                else
-                    -- Sem drops: volta pro checkpoint se Teleport
-                    if autoPickupType == "Teleport" and teleportCheckpoint then
-                        hrp.CFrame = CFrame.new(teleportCheckpoint)
-                    end
-                    task.wait(0.3)
-                end
+        local drops = {}
+        for _, v in ipairs(ws:GetChildren()) do
+            if v.Name == "DropItem" then
+                local pos = v.Position
+                table.insert(drops, {obj = v, pos = pos, dist = (pos - hrp.Position).Magnitude})
             end
         end
-        RunService.Heartbeat:Wait()
+
+        if #drops > 0 then
+            table.sort(drops, function(a,b) return a.dist < b.dist end)
+
+            if autoPickupType == "Teleport" then
+                for _, dropInfo in ipairs(drops) do
+                    local drop = dropInfo.obj
+                    if drop and drop.Parent then
+                        hrp.CFrame = CFrame.new(dropInfo.pos + Vector3.new(0,3,0))
+                        collectDrop(drop)
+                        task.wait(0.25)
+                    end
+                end
+            else
+                for _, dropInfo in ipairs(drops) do
+                    if dropInfo.dist <= pickupRange then
+                        collectDrop(dropInfo.obj)
+                    end
+                end
+                RunService.Heartbeat:Wait()
+            end
+
+        else
+            if autoPickupType == "Teleport" and teleportCheckpoint then
+                local now = tick()
+                if now - lastTeleportBack >= 2 then
+                    hrp.CFrame = CFrame.new(teleportCheckpoint)
+                    lastTeleportBack = now
+                end
+            end
+            task.wait(0.3)
+        end
     end
 
-    -- Ao desativar, Teleport volta para checkpoint
-    if autoPickupType == "Teleport" and teleportCheckpoint and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-        lp.Character.HumanoidRootPart.CFrame = CFrame.new(teleportCheckpoint)
+    if autoPickupType == "Teleport" and teleportCheckpoint then
+        local char = lp.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(teleportCheckpoint)
+        end
     end
 end
 
--- Mantém loop ativo mesmo após respawn
 Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    if autoPickupActive then
-        if autoPickupType == "Teleport" and char:FindFirstChild("HumanoidRootPart") then
+    if autoPickupActive and autoPickupType == "Teleport" then
+        task.wait(0.15)
+        if teleportCheckpoint and char:FindFirstChild("HumanoidRootPart") then
             char.HumanoidRootPart.CFrame = CFrame.new(teleportCheckpoint)
         end
         coroutine.wrap(AutoPickupLoop)()
     end
 end)
 
--- Dropdown do Auto Pickup
 local PickupDropdown = Tabs.AutoFarm:AddDropdown("PickupMode", {
     Title = "Modo Pickup",
-    Description = "Selecionar",
+    Description = "Selecione o metodo de coletar",
     Values = {"Aura", "Teleport"},
     Multi = false,
     Default = "Selecionar"
@@ -449,7 +430,6 @@ PickupDropdown:OnChanged(function(value)
     autoPickupType = value
 end)
 
--- Toggle para ativar/desativar
 Tabs.AutoFarm:AddToggle("AutoPickupToggle", {
     Title = "Auto Pickup",
     Description = "Ativa o Auto Pickup selecionado",
@@ -459,11 +439,13 @@ Tabs.AutoFarm:AddToggle("AutoPickupToggle", {
         if state then
             if autoPickupType == "Teleport" and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
                 teleportCheckpoint = lp.Character.HumanoidRootPart.Position
+                lastTeleportBack = tick()
             end
             coroutine.wrap(AutoPickupLoop)()
         end
     end
 })
+
 
 -- ===========
 -- ABA DISCORD
