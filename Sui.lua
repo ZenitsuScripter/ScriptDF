@@ -2,7 +2,7 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "Sui Hub v1.51",
+    Title = "Sui Hub v1.52",
     SubTitle = "by Suiryuu",
     TabWidth = 160,
     Size = UDim2.fromOffset(500, 350),
@@ -324,7 +324,7 @@ Tabs.AutoFarm:AddToggle("AutoTrinketToggle", {
 })
 
 -- =====================
--- AUTO PICKUP (AURA / TELEPORT)
+-- AUTO PICKUP (AURA / TELEPORT) REFACTORED
 -- =====================
 local lp = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
@@ -336,13 +336,36 @@ local autoPickupType = "Selecionar" -- valor inicial
 local autoPickupActive = false
 local pickupRange = 20
 local teleportCheckpoint = nil -- só para Teleport
+local monitoredDrops = {} -- tabela de drops ativos
 
--- Função para pegar drops
+-- Função para coletar drops
 local function collectDrop(drop)
-    pcall(function()
-        rs.Remotes.Async:FireServer("Character", "Interaction", drop)
+    if drop and drop.Parent then
+        pcall(function()
+            rs.Remotes.Async:FireServer("Character", "Interaction", drop)
+        end)
+    end
+end
+
+-- Função para adicionar drops à lista
+local function monitorContainer(container)
+    for _, obj in pairs(container:GetChildren()) do
+        if obj.Name == "DropItem" then
+            monitoredDrops[obj] = obj
+        end
+    end
+    container.ChildAdded:Connect(function(child)
+        if child.Name == "DropItem" then
+            monitoredDrops[child] = child
+        end
+    end)
+    container.ChildRemoved:Connect(function(child)
+        monitoredDrops[child] = nil
     end)
 end
+
+-- Inicializa monitoramento
+monitorContainer(ws)
 
 -- Loop do Auto Pickup
 local function AutoPickupLoop()
@@ -356,18 +379,16 @@ local function AutoPickupLoop()
                 task.wait(0.3)
             else
                 local drops = {}
-                -- Pega todos os drops no mapa
-                for _, v in pairs(ws:GetChildren()) do
-                    if v.Name == "DropItem" then
-                        local pos = (v:IsA("BasePart") and v.Position) or (v.PrimaryPart and v.PrimaryPart.Position)
+                for dropObj, drop in pairs(monitoredDrops) do
+                    if drop and drop.Parent then
+                        local pos = (drop:IsA("BasePart") and drop.Position) or (drop.PrimaryPart and drop.PrimaryPart.Position)
                         if pos then
-                            table.insert(drops, {obj = v, pos = pos, dist = (pos - hrp.Position).Magnitude})
+                            table.insert(drops, {obj = drop, pos = pos, dist = (pos - hrp.Position).Magnitude})
                         end
                     end
                 end
 
                 if #drops > 0 then
-                    -- Ordena por proximidade
                     table.sort(drops, function(a, b)
                         return a.dist < b.dist
                     end)
@@ -379,7 +400,7 @@ local function AutoPickupLoop()
                             if autoPickupType == "Teleport" then
                                 hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
                                 collectDrop(drop)
-                                task.wait(0.5) -- delay entre teleports
+                                task.wait(0.5)
                             else -- Aura
                                 if dropData.dist <= pickupRange then
                                     collectDrop(drop)
@@ -388,7 +409,7 @@ local function AutoPickupLoop()
                         end
                     end
                 else
-                    -- Sem drops: volta para checkpoint se Teleport
+                    -- Sem drops: volta pro checkpoint se Teleport
                     if autoPickupType == "Teleport" and teleportCheckpoint then
                         hrp.CFrame = CFrame.new(teleportCheckpoint)
                     end
