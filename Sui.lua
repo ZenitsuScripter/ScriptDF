@@ -1,100 +1,114 @@
--- // AUTO BREATH GUI (Drag + Smart ON/OFF Loop) \\ --
+-- // AUTO BREATH GUI + SMART LOOP (35↔95) \\ --
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+local lp = game:service"Players".LocalPlayer
+local ws = game:service"Workspace"
+local rs = game:service"ReplicatedStorage"
 
 _G.autoBreath = false
-local isBreathing = false
+local isB = false
+local state = "idle" -- "idle", "breathing", "waiting"
 
--- Criação da GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "AutoBreathGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local Frame = Instance.new("Frame")
-Frame.Name = "MainFrame"
-Frame.Size = UDim2.new(0, 150, 0, 50)
-Frame.Position = UDim2.new(0.05, 0, 0.2, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true
-Frame.Parent = ScreenGui
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0.5, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Auto Breath"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextScaled = true
-Title.Parent = Frame
-
-local Toggle = Instance.new("TextButton")
-Toggle.Size = UDim2.new(1, 0, 0.5, 0)
-Toggle.Position = UDim2.new(0, 0, 0.5, 0)
-Toggle.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-Toggle.Text = "OFF"
-Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-Toggle.Font = Enum.Font.GothamBold
-Toggle.TextScaled = true
-Toggle.Parent = Frame
-
--- Funções
-local function spamBreath()
-	ReplicatedStorage.Remotes.Async:FireServer("Character", "Breath", true)
+-- Garante que player tem o stat
+if not lp:FindFirstChild("Breathing") then
+	repeat task.wait(1) until lp:FindFirstChild("Breathing")
 end
 
-local function haltBreath()
-	ReplicatedStorage.Remotes.Async:FireServer("Character", "Breath", false)
+-- Cria GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "AutoBreathGUI"
+gui.ResetOnSpawn = false
+gui.Parent = lp:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 150, 0, 50)
+frame.Position = UDim2.new(0.05, 0, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.Active = true
+frame.Draggable = true
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0.5, 0)
+title.BackgroundTransparency = 1
+title.Text = "Auto Breath"
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.Parent = frame
+
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(1, 0, 0.5, 0)
+toggle.Position = UDim2.new(0, 0, 0.5, 0)
+toggle.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+toggle.Text = "OFF"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextScaled = true
+toggle.TextColor3 = Color3.fromRGB(255,255,255)
+toggle.Parent = frame
+
+-- Funções
+local function spamB()
+	rs.Remotes.Async:FireServer("Character", "Breath", true)
+end
+
+local function haltB()
+	rs.Remotes.Async:FireServer("Character", "Breath", false)
 end
 
 local function toggleState()
 	_G.autoBreath = not _G.autoBreath
-	Toggle.Text = _G.autoBreath and "ON" or "OFF"
-	Toggle.BackgroundColor3 = _G.autoBreath and Color3.fromRGB(0, 200, 100) or Color3.fromRGB(90, 90, 90)
+	toggle.Text = _G.autoBreath and "ON" or "OFF"
+	toggle.BackgroundColor3 = _G.autoBreath and Color3.fromRGB(0,200,100) or Color3.fromRGB(90,90,90)
 
 	if not _G.autoBreath then
-		haltBreath()
-		isBreathing = false
+		haltB()
+		isB = false
+		state = "idle"
 	end
 end
 
-Toggle.MouseButton1Click:Connect(toggleState)
+toggle.MouseButton1Click:Connect(toggleState)
 
--- Loop inteligente
-task.spawn(function()
-	while task.wait(0.25) do
-		if not _G.autoBreath then continue end
+-- Loop principal
+coroutine.wrap(function()
+	while task.wait(0.45) do
+		if not _G.autoBreath then
+			task.wait(0.2)
+			continue
+		end
 
-		local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-		local breathStat = LocalPlayer:FindFirstChild("Breathing")
-		if not breathStat or not breathStat:FindFirstChild("Value") then continue end
+		local breath = lp:FindFirstChild("Breathing")
+		if not breath then continue end
+		local val = breath.Value
 
-		local current = breathStat.Value
+		if state == "breathing" and val >= 95 then
+			isB = false
+			state = "waiting"
+			haltB()
 
-		-- Se abaixo de 35 → respira
-		if current < 35 and not isBreathing then
-			isBreathing = true
-			spamBreath()
-		
-		-- Se chegou em 95 → para
-		elseif current >= 95 and isBreathing then
-			isBreathing = false
-			haltBreath()
+		elseif state == "waiting" and val < 35 then
+			isB = true
+			state = "breathing"
+			spamB()
+
+		elseif state == "idle" and val < 35 then
+			isB = true
+			state = "breathing"
+			spamB()
 		end
 	end
-end)
+end)()
 
--- Mantém ativo após renascer
-LocalPlayer.CharacterAdded:Connect(function()
+-- Mantém após respawn
+lp.CharacterAdded:Connect(function()
 	task.wait(2)
 	if _G.autoBreath then
-		local breathStat = LocalPlayer:FindFirstChild("Breathing")
-		if breathStat and breathStat.Value < 35 then
-			spamBreath()
+		local breath = lp:FindFirstChild("Breathing")
+		if breath and breath.Value < 35 then
+			isB = true
+			state = "breathing"
+			spamB()
 		end
 	end
 end)
