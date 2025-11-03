@@ -85,4 +85,27 @@ task.spawn(function()
 	while task.wait(0.45) do
 		local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 		local breath = LocalPlayer:FindFirstChild("Breathing")
-		if not breath th
+		if not breath then continue end
+
+		if _G.autoBreath then
+			if breath.Value >= 95 and isBreathing then
+				isBreathing = false
+				haltBreath()
+			elseif breath.Value < 35 and not isBreathing then
+				isBreathing = true
+				spamBreath()
+			end
+		elseif isBreathing then
+			isBreathing = false
+			haltBreath()
+		end
+	end
+end)
+
+-- Persistência após morte
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(2)
+	if _G.autoBreath then
+		isBreathing = false -- resetar para reinício
+	end
+end)
